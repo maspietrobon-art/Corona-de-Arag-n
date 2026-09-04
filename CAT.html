@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.8)</title>
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.9)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -41,6 +41,23 @@
   #fullscreenBtn{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#2a1c14;
     color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
   #fullscreenBtn:hover{background:#3a281c;}
+  #supportBtn{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#5a1e22;
+    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+  #supportBtn:hover{background:#7a2a2f;}
+  #supportModalOverlay{display:none; position:fixed; inset:0; z-index:5000; background:rgba(20,12,8,.75);
+    align-items:center; justify-content:center; padding:20px;}
+  #supportModalOverlay.open{display:flex;}
+  #supportModal{position:relative; max-width:480px; width:100%; max-height:85vh; overflow-y:auto;
+    background:var(--parchment); border:2px solid var(--gold); border-radius:6px; padding:24px 22px 20px;
+    box-shadow:0 12px 40px rgba(0,0,0,.5); font-family:'EB Garamond',serif; color:var(--ink);}
+  #supportModal h2{font-family:'Cormorant Garamond',serif; font-size:22px; margin:0 0 12px; color:var(--corona);}
+  #supportModal p{font-size:14px; line-height:1.5; margin:0 0 16px;}
+  #supportCloseBtn{position:absolute; top:10px; right:12px; background:none; border:none; font-size:18px;
+    color:var(--ink-soft); cursor:pointer;}
+  .support-row{margin:0 0 12px; font-size:13px; line-height:1.4; padding-bottom:10px; border-bottom:1px solid var(--line);}
+  .support-row b{display:block; color:var(--corona); font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px;}
+  .support-row:last-child{border-bottom:none;}
   #app.is-fullscreen{position:fixed; inset:0; z-index:3000; height:100vh; height:100dvh;}
   #exitFullscreenBtn{display:none; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px;
     background:var(--corona); color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
@@ -135,6 +152,7 @@
   .m-siege-suffered{background:radial-gradient(circle,#ffd66e,#ff9628 70%); border:2px dashed #8f1626; color:#3a2416;}
   .m-revolt{background:radial-gradient(circle,#e0c8f0,#9b5fc0 70%); color:#2a1c14;}
   .m-dedication{background:radial-gradient(circle,#d8f0d0,#5a9b5f 70%); color:#2a1c14;}
+  .m-dedication-nominal{background:radial-gradient(circle,#e8e8e8,#9099a3 70%); border:2px dashed #5a6470; color:#2a1c14; opacity:.85;}
 
   footer.disclaimer{grid-column:1/-1; font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-align:center;
     color:#8c8270; padding:5px; background:var(--parchment-dark);}
@@ -145,9 +163,10 @@
   <header>
     <div id="headerTitleBlock">
       <h1 id="titleTxt">La Corona d'Aragó</h1>
-      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.8</span>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.9</span>
     </div>
     <div id="headerControls">
+      <button id="supportBtn">♥ <span id="lblSupport">Suport</span></button>
       <button id="fullscreenBtn">⛶ <span id="lblFullscreen">Pantalla completa</span></button>
       <button id="exitFullscreenBtn">✕ <span id="lblExitFullscreen">Sortir</span></button>
       <div id="langToggle">
@@ -156,6 +175,18 @@
       </div>
     </div>
   </header>
+
+  <div id="supportModalOverlay">
+    <div id="supportModal">
+      <button id="supportCloseBtn">✕</button>
+      <h2 id="supportTitle">Sosté el projecte</h2>
+      <p id="supportBody">Aquest mapa neix de centenars d'hores de recerca històrica independent. Si t'ha agradat i vols ajudar-nos a continuar millorant-lo i ampliant-lo, qualsevol contribució és benvinguda i apreciada.</p>
+      <div class="support-row"><b>PayPal</b><span id="supportPaypal">mas.pietrobon@gmail.com</span></div>
+      <div class="support-row"><b>Revolut</b><span id="supportRevolut">Pots enviar-me pagaments per Revolut mitjançant aquest enllaç: revolut.me/massimxz2d</span></div>
+      <div class="support-row"><b>Bizum</b><span>+34 626 651 196</span></div>
+      <div class="support-row"><b id="supportIbanLabel">Transferència (IBAN Revolut)</b><span id="supportIban">Beneficiari: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, Espanya</span></div>
+    </div>
+  </div>
 
   <aside class="mainside">
     <h2 id="lblVisual">Visualització</h2>
@@ -213,7 +244,7 @@
 
 <script>
 /* =======================================================================
-   DADES — esborrany v0.8. Camps bilingües amb sufix _ca / _es.
+   DADES — esborrany v0.9. Camps bilingües amb sufix _ca / _es.
    ======================================================================= */
 const ENTITATS = {
   "Comtats catalans":   {color:"#7a2e1d", label_ca:"Comtats catalans (pre-unió)", label_es:"Condados catalanes (pre-unión)"},
@@ -294,8 +325,6 @@ const TERRITORIS = [
   note_ca:"Vespres Sicilianes (1282). Pel Tractat d'Anagni (1295) Jaume II el cedí formalment al Papat, però el seu germà Frederic III continuà governant-lo com a regne separat fins a la reunificació de fet el 1409-1442.", note_es:"Vísperas Sicilianas (1282). Por el Tratado de Anagni (1295) Jaime II lo cedió formalmente al Papado, pero su hermano Federico III siguió gobernándolo como reino separado hasta la reunificación de facto en 1409-1442."},
  {n_ca:"Regne de Sicília (Monarquia Hispànica)", n_es:"Reino de Sicilia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:37.5, lon:14.0,
   note_ca:"Continua com a regne separat dins la Monarquia Hispànica fins al segle XVIII.", note_es:"Continúa como reino separado dentro de la Monarquía Hispánica hasta el siglo XVIII."},
- {n_ca:"Illa de Còrsega (feu pontifici, mai efectivament dominada)", n_es:"Isla de Córcega (feudo pontificio, nunca dominada efectivamente)", ent:"Corona d'Aragó", nominal:1, ys:1297, ye:1350, lat:42.0396, lon:9.0129,
-  note_ca:"Investida pel papa Bonifaci VIII el 1297 junt amb Sardenya, però la Corona no hi exercí mai control efectiu, en guerra civil entre genovesos.", note_es:"Investida por el papa Bonifacio VIII en 1297 junto con Cerdeña, pero la Corona nunca ejerció control efectivo, en guerra civil entre genoveses."},
  {n_ca:"Jutjat d'Arborea", n_es:"Judicado de Arborea", ent:"Jutjat d'Arborea", ys:1100, ye:1420, lat:39.8833, lon:8.5667,
   note_ca:"Darrer dels jutjats sards independents; resistí la conquesta catalana fins al 1420.", note_es:"Último de los judicados sardos independientes; resistió la conquista catalana hasta 1420."},
  {n_ca:"Regne de Sardenya", n_es:"Reino de Cerdeña", ent:"Corona d'Aragó", ys:1324, ye:1516, lat:40.1, lon:9.1,
@@ -324,8 +353,6 @@ const TERRITORIS = [
   note_ca:"Repoblament definitiu de Tarragona sota Ramon Berenguer III/IV.", note_es:"Repoblamiento definitivo de Tarragona bajo Ramón Berenguer III/IV."},
  {n_ca:"Illa de Kastellórizo", n_es:"Isla de Castellórizo", ent:"Corona d'Aragó", ys:1450, ye:1458, lat:36.1497, lon:29.5883,
   note_ca:"Petita illa de l'Egeu reconeguda a Alfons el Magnànim pel papa Nicolau V el 1450.", note_es:"Pequeña isla del Egeo reconocida a Alfonso el Magnánimo por el papa Nicolás V en 1450."},
- {n_ca:"Zona d'influència nord-africana (Tremecén/Ifríqiya)", n_es:"Zona de influencia norteafricana (Tremecén/Ifriquiya)", ent:"Corona d'Aragó", nominal:1, ys:1291, ye:1350, lat:35.5, lon:2.0,
-  note_ca:"Acord de Monteagudo (1291) amb Castella: zona d'influència comercial i militar catalanoaragonesa al Magrib central.", note_es:"Acuerdo de Monteagudo (1291) con Castilla: zona de influencia comercial y militar catalanoaragonesa en el Magreb central."},
  {n_ca:"Marca Hispànica (Girona-Barcelona carolíngia)", n_es:"Marca Hispánica (Girona-Barcelona carolingia)", ent:"Regne d'Aragó", ys:801, ye:878, lat:41.6, lon:2.0,
   note_ca:"Zona tampó carolíngia, precedent dels comtats catalans.", note_es:"Zona tampón carolingia, precedente de los condados catalanes."},
  {n_ca:"Comtat de Barcelona (vassallatge franc, pre-independència)", n_es:"Condado de Barcelona (vasallaje franco, pre-independencia)", ent:"Comtats catalans", ys:801, ye:988, lat:41.3873, lon:2.1686,
@@ -578,6 +605,36 @@ const TERRITORIS = [
   note_ca:"Incorporada amb la resta del Regne de Nàpols.", note_es:"Incorporada con el resto del Reino de Nápoles."},
  {n_ca:"Salern", n_es:"Salerno", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:40.6824, lon:14.7681,
   note_ca:"Incorporada amb la resta del Regne de Nàpols.", note_es:"Incorporada con el resto del Reino de Nápoles."},
+,
+ /* --- densificació Sicília, sud d'Itàlia i Sardenya --- */
+ {n_ca:"Palerm", n_es:"Palermo", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:38.1157, lon:13.3615,
+  note_ca:"Capital del Regne de Sicília des de les Vespres Sicilianes.", note_es:"Capital del Reino de Sicilia desde las Vísperas Sicilianas."},
+ {n_ca:"Messina", n_es:"Mesina", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:38.1938, lon:15.554,
+  note_ca:"Port clau de l'estret; escenari de diverses victòries navals catalanoaragoneses.", note_es:"Puerto clave del estrecho; escenario de varias victorias navales catalanoaragonesas."},
+ {n_ca:"Agrigent (Girgenti)", n_es:"Agrigento (Girgenti)", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:37.3111, lon:13.5765,
+  note_ca:"Incorporada arran de les Vespres Sicilianes.", note_es:"Incorporada tras las Vísperas Sicilianas."},
+ {n_ca:"Marsala", n_es:"Marsala", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:37.8003, lon:12.4322,
+  note_ca:"Port occidental sicilià.", note_es:"Puerto occidental siciliano."},
+ {n_ca:"Cefalù", n_es:"Cefalú", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:38.04, lon:14.0228,
+  note_ca:"Ciutat costanera del nord de Sicília.", note_es:"Ciudad costera del norte de Sicilia."},
+ {n_ca:"Càpua", n_es:"Capua", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:41.1047, lon:14.2131,
+  note_ca:"Plaça clau en la campanya final d'Alfons el Magnànim.", note_es:"Plaza clave en la campaña final de Alfonso el Magnánimo."},
+ {n_ca:"L'Aquila", n_es:"L'Aquila", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:42.3498, lon:13.3995,
+  note_ca:"Ciutat rebel incorporada al final de la conquesta.", note_es:"Ciudad rebelde incorporada al final de la conquista."},
+ {n_ca:"Taranto", n_es:"Tarento", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:40.4644, lon:17.247,
+  note_ca:"Port clau de la Pulla, incorporat amb el regne.", note_es:"Puerto clave de Apulia, incorporado con el reino."},
+ {n_ca:"Reggio de Calàbria", n_es:"Reggio de Calabria", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:38.1147, lon:15.65,
+  note_ca:"Extrem meridional del Regne de Nàpols.", note_es:"Extremo meridional del Reino de Nápoles."},
+ {n_ca:"Amalfi", n_es:"Amalfi", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:40.634, lon:14.6027,
+  note_ca:"Antiga república marinera, incorporada amb el regne.", note_es:"Antigua república marinera, incorporada con el reino."},
+ {n_ca:"Ischia", n_es:"Ischia", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:40.7333, lon:13.95,
+  note_ca:"Illa clau al golf de Nàpols.", note_es:"Isla clave en el golfo de Nápoles."},
+ {n_ca:"Iglésies", n_es:"Iglesias", ent:"Corona d'Aragó", ys:1324, ye:1516, lat:39.3086, lon:8.5364,
+  note_ca:"Important centre miner, incorporat en la primera fase de la conquesta (1324).", note_es:"Importante centro minero, incorporado en la primera fase de la conquista (1324)."},
+ {n_ca:"Bosa", n_es:"Bosa", ent:"Corona d'Aragó", ys:1330, ye:1516, lat:40.2997, lon:8.4975,
+  note_ca:"Ciutat costanera del nord-oest de Sardenya.", note_es:"Ciudad costera del noroeste de Cerdeña."},
+ {n_ca:"Castellsard (Castelsardo)", n_es:"Castelsardo", ent:"Corona d'Aragó", ys:1448, ye:1516, lat:40.9083, lon:8.7139,
+  note_ca:"Darreres places genoveses incorporades a l'illa.", note_es:"Últimas plazas genovesas incorporadas a la isla."},
 ];
 
 const BATALLES = [
@@ -619,6 +676,10 @@ const BATALLES = [
   res_ca:"Victòria naval catalanoaragonesa a la badia de Nàpols/Messina.", res_es:"Victoria naval catalanoaragonesa en la bahía de Nápoles/Mesina."},
  {n_ca:"Pau d'Anagni", n_es:"Paz de Anagni", ys:1295, lat:41.4547, lon:13.1522, kind:"dedication", out:"uncertain",
   res_ca:"Jaume II cedeix formalment Sicília al Papat a canvi de la investidura de Còrsega i Sardenya; el seu germà Frederic manté Sicília per la força.", res_es:"Jaime II cede formalmente Sicilia al Papado a cambio de la investidura de Córcega y Cerdeña; su hermano Federico mantiene Sicilia por la fuerza."},
+ {n_ca:"Investidura pontifícia de Còrsega", n_es:"Investidura pontificia de Córcega", ys:1297, lat:42.0396, lon:9.0129, kind:"dedication", nominal:1, out:"uncertain",
+  res_ca:"El papa Bonifaci VIII investeix Jaume II de Còrsega junt amb Sardenya, però la Corona no hi va exercir mai control efectiu: reconeixement purament nominal, sense conseqüències territorials reals.", res_es:"El papa Bonifacio VIII inviste a Jaime II de Córcega junto con Cerdeña, pero la Corona nunca ejerció allí control efectivo: reconocimiento puramente nominal, sin consecuencias territoriales reales."},
+ {n_ca:"Acord de Monteagudo", n_es:"Acuerdo de Monteagudo", ys:1291, lat:35.5, lon:2.0, kind:"dedication", nominal:1, out:"uncertain",
+  res_ca:"Repartiment amb Castella de futures zones d'influència al Magrib (Tremecén/Ifríqiya per a la Corona); un acord diplomàtic sense ocupació ni domini territorial efectiu.", res_es:"Reparto con Castilla de futuras zonas de influencia en el Magreb (Tremecén/Ifriquiya para la Corona); un acuerdo diplomático sin ocupación ni dominio territorial efectivo."},
  {n_ca:"Batalla de Falconara", n_es:"Batalla de Falconara", ys:1299, lat:37.8, lon:12.5, kind:"battle", out:"won",
   res_ca:"Roger de Llúria derrota la flota angevina.", res_es:"Roger de Lauria derrota a la flota angevina."},
  {n_ca:"Batalla del Cefís", n_es:"Batalla del Cefiso", ys:1311, lat:38.35, lon:23.25, kind:"battle", out:"won",
@@ -794,26 +855,36 @@ let currentYear = 1137;
 let activeEntities = new Set(Object.keys(ENTITATS));
 
 const STR = {
-  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.8",
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.9",
       visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)",
-      fullscreen:"Pantalla completa", exitFullscreen:"Sortir",
+      fullscreen:"Pantalla completa", exitFullscreen:"Sortir", support:"Suport",
+      supportTitle:"Sosté el projecte",
+      supportBody:"Aquest mapa neix de centenars d'hores de recerca històrica independent. Si t'ha agradat i vols ajudar-nos a continuar millorant-lo i ampliant-lo, qualsevol contribució és benvinguda i apreciada.",
+      supportRevolutText:"Pots enviar-me pagaments per Revolut mitjançant aquest enllaç: revolut.me/massimxz2d",
+      supportIbanLabel:"Transferència (IBAN Revolut)",
+      supportIbanText:"Beneficiari: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, Espanya",
       entitats:"Entitats sobiranes (territoris)", batMap:"Batalles i esdeveniments al mapa",
       bWon:"Batalles guanyades", bUnc:"Batalles d'esdeveniment incert", bLost:"Batalles perdudes",
       sImp:"Setges imposats", sSuf:"Setges patits", revolt:"Revoltes", ded:"Dedicacions / adhesions",
       fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
       guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
       legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
-      disclaimer:"Projecte de recerca personal i no oficial. Dades en fase inicial d'elaboració (esborrany v0.8): cal verificació i ampliació."},
-  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.8",
+      disclaimer:"Projecte de recerca personal i no oficial. Dades en fase inicial d'elaboració (esborrany v0.9): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.9",
       visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)",
-      fullscreen:"Pantalla completa", exitFullscreen:"Salir",
+      fullscreen:"Pantalla completa", exitFullscreen:"Salir", support:"Apoyo",
+      supportTitle:"Apoya el proyecto",
+      supportBody:"Este mapa nace de cientos de horas de investigación histórica independiente. Si te ha gustado y quieres ayudarnos a seguir mejorándolo y ampliándolo, cualquier contribución es bienvenida y apreciada.",
+      supportRevolutText:"Puedes enviarme pagos por Revolut mediante este enlace: revolut.me/massimxz2d",
+      supportIbanLabel:"Transferencia (IBAN Revolut)",
+      supportIbanText:"Beneficiario: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, España",
       entitats:"Entidades soberanas (territorios)", batMap:"Batallas y eventos en el mapa",
       bWon:"Batallas ganadas", bUnc:"Batallas de resultado incierto", bLost:"Batallas perdidas",
       sImp:"Sitios impuestos", sSuf:"Sitios sufridos", revolt:"Revueltas", ded:"Dedicaciones / adhesiones",
       fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
       guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
       legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
-      disclaimer:"Proyecto de investigación personal y no oficial. Datos en fase inicial de elaboración (borrador v0.8): requieren verificación y ampliación."}
+      disclaimer:"Proyecto de investigación personal y no oficial. Datos en fase inicial de elaboración (borrador v0.9): requieren verificación y ampliación."}
 };
 
 function setLang(l){
@@ -836,6 +907,12 @@ function refreshAllTexts(){
   document.getElementById('lblAllTimeSub').textContent = s.allTimeSub;
   document.getElementById('lblFullscreen').textContent = s.fullscreen;
   document.getElementById('lblExitFullscreen').textContent = s.exitFullscreen;
+  document.getElementById('lblSupport').textContent = s.support;
+  document.getElementById('supportTitle').textContent = s.supportTitle;
+  document.getElementById('supportBody').textContent = s.supportBody;
+  document.getElementById('supportRevolut').textContent = s.supportRevolutText;
+  document.getElementById('supportIbanLabel').textContent = s.supportIbanLabel;
+  document.getElementById('supportIban').textContent = s.supportIbanText;
   document.getElementById('lblEntitats').textContent = s.entitats;
   document.getElementById('lblBatMap').textContent = s.batMap;
   document.getElementById('lblBWon').textContent = s.bWon;
@@ -893,7 +970,8 @@ function renderLegend(){
     ['♖','#ff9628', LANG==='ca'?'Setge imposat':'Sitio impuesto'],
     ['♖','#ff9628', LANG==='ca'?'Setge patit':'Sitio sufrido'],
     ['⚑','#9b5fc0', LANG==='ca'?'Revolta':'Revuelta'],
-    ['⚖','#5a9b5f', LANG==='ca'?'Dedicació':'Dedicación']
+    ['⚖','#5a9b5f', LANG==='ca'?'Dedicació':'Dedicación'],
+    ['◇','#9099a3', LANG==='ca'?'Reconeixement nominal (sense domini efectiu)':'Reconocimiento nominal (sin dominio efectivo)']
   ];
   items.forEach(([sym,color,label])=>{
     html += `<div class="lg-row"><span class="lg-sym" style="color:${color}">${sym}</span>${label}</div>`;
@@ -903,18 +981,22 @@ function renderLegend(){
 
 /* ===================== MAPA ===================== */
 const map = L.map('map', {zoomSnap:0.5}).setView([40.2, 5.5], 5);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution:'&copy; OpenStreetMap contributors', maxZoom:18
 }).addTo(map);
 
 let territoriLayer = L.layerGroup().addTo(map);
 let battleLayer = L.layerGroup().addTo(map);
 
 const SYMS = {battle:'⚔', siege:'♖', revolt:'⚑', dedication:'⚖'};
+function symbolFor(b){
+  if(b.kind==='dedication' && b.nominal) return '◇';
+  return SYMS[b.kind];
+}
 function markerClassFor(b){
   if(b.kind==='siege') return b.dir==='imposed' ? 'm-siege-imposed' : 'm-siege-suffered';
   if(b.kind==='revolt') return 'm-revolt';
-  if(b.kind==='dedication') return 'm-dedication';
+  if(b.kind==='dedication') return b.nominal ? 'm-dedication-nominal' : 'm-dedication';
   return 'm-'+b.out;
 }
 function battleVisible(b){
@@ -962,7 +1044,7 @@ function updateMap(){
       const dist = currentYear - b.ys;
       if(dist < 0 || dist > BATTLE_WINDOW) return; // apareix a l'any exacte i s'esvaeix pocs anys després
     }
-    const icon = L.divIcon({className:'', html:`<div class="divmark pulse ${markerClassFor(b)}">${SYMS[b.kind]}</div>`, iconSize:[26,26]});
+    const icon = L.divIcon({className:'', html:`<div class="divmark pulse ${markerClassFor(b)}">${symbolFor(b)}</div>`, iconSize:[26,26]});
     const marker = L.marker([b.lat, b.lon], {icon});
     const name = LANG==='ca' ? b.n_ca : b.n_es;
     const res = LANG==='ca' ? b.res_ca : b.res_es;
@@ -1135,6 +1217,15 @@ document.addEventListener('keydown', (e)=>{
 });
 document.addEventListener('fullscreenchange', ()=>{
   if(!document.fullscreenElement) appEl.classList.remove('is-fullscreen');
+});
+
+/* ===================== SUPORT AL PROJECTE ===================== */
+const supportOverlay = document.getElementById('supportModalOverlay');
+document.getElementById('supportBtn').addEventListener('click', ()=> supportOverlay.classList.add('open'));
+document.getElementById('supportCloseBtn').addEventListener('click', ()=> supportOverlay.classList.remove('open'));
+supportOverlay.addEventListener('click', (e)=>{ if(e.target === supportOverlay) supportOverlay.classList.remove('open'); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && supportOverlay.classList.contains('open')) supportOverlay.classList.remove('open');
 });
 
 /* ===================== INIT ===================== */
