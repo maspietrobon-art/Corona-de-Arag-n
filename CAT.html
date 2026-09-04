@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.8)</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root{
+    --parchment:#f0e7d4; --parchment-dark:#e2d4b3; --ink:#2a1f14; --ink-soft:#4d4130;
+    --gold:#c08a2e; --line:#c9b98c;
+    --comtat:#7a2e1d; --regne-arago:#a1471f; --corona:#8f1626; --mallorca-ind:#3f6b34;
+    --napols:#175a66; --grecia:#6a3b8f; --sardenya:#8a6d1f; --arborea:#4a6b8f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--ink);font-family:'EB Garamond',serif;color:var(--ink);}
+  #app{
+    display:grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto;
+    height:100vh; height:100dvh;
+    grid-template-areas: "header header" "side map" "timeline timeline";
+    background:var(--parchment); position:relative;
+  }
+  #app > header, #app > aside, #app > #map, #app > #timeline{ min-width:0; }
+  @media (max-width:900px){
+    #app{grid-template-columns:1fr; grid-template-rows:auto minmax(320px,42vh) minmax(280px,44vh) auto;
+      grid-template-areas:"header" "map" "side" "timeline"; height:100vh; height:100dvh; overflow-y:auto;}
+  }
+  header{grid-area:header; background:linear-gradient(180deg,#2a1c14,#1c130d); color:var(--parchment);
+    padding:8px 14px; border-bottom:3px solid var(--gold); display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:0;}
+  header h1{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; margin:0; color:#f2e6c4; line-height:1.1;}
+  header .sub{font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.8px; text-transform:uppercase; color:#d3a862; opacity:.9; display:block;}
+  #headerTitleBlock{display:flex; flex-direction:column; gap:1px;}
+  #headerControls{margin-left:auto; display:flex; align-items:center; gap:8px;}
+  #langToggle{display:flex; gap:5px;}
+  #langToggle button{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#2a1c14;
+    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+  #langToggle button.active{background:var(--gold); color:#2a1c14; font-weight:700;}
+  #fullscreenBtn{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#2a1c14;
+    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+  #fullscreenBtn:hover{background:#3a281c;}
+  #app.is-fullscreen{position:fixed; inset:0; z-index:3000; height:100vh; height:100dvh;}
+  #exitFullscreenBtn{display:none; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px;
+    background:var(--corona); color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+  #app.is-fullscreen #exitFullscreenBtn{display:inline-block;}
+  #app.is-fullscreen #fullscreenBtn{display:none;}
+
+  aside.mainside{grid-area:side; background:var(--parchment-dark); border-right:3px solid var(--gold);
+    overflow-y:auto; padding:14px 16px 40px;}
+  aside.mainside h2{font-family:'Cormorant Garamond',serif; font-size:13px; text-transform:uppercase; letter-spacing:1.3px;
+    margin:18px 0 8px; color:var(--corona); border-bottom:1px solid var(--line); padding-bottom:4px;}
+  aside.mainside h2:first-child{margin-top:0;}
+  .cat-row{display:flex; align-items:center; gap:7px; font-size:12px; margin:5px 0; cursor:pointer; color:var(--ink-soft);}
+  .cat-row input{flex:0 0 auto;}
+  .swatch{width:14px; height:14px; display:inline-block; flex:0 0 auto;}
+
+  /* side-strip: pannelli di cronologia sincronizzata, INTEGRATI nella griglia
+     (colonna propria su desktop, riga propria su mobile) — mai sopra la mappa. */
+  .side-strip{
+    display:none; position:relative; overflow-y:auto; background:rgba(30,20,14,.97);
+    border-left:2px solid var(--gold); padding:10px 12px 14px; color:#f2e6c4; min-width:0;
+  }
+  .side-strip.open{display:block;}
+  .side-strip h3{font-family:'Cormorant Garamond',serif; font-size:13.5px; margin:0 0 8px; color:#e0c27a;
+    border-bottom:1px solid rgba(242,230,196,.3); padding-bottom:4px; padding-right:20px;}
+  .stripCloseBtn{position:absolute; top:8px; right:8px; background:none; border:none; color:#f2e6c4; font-size:14px; cursor:pointer;}
+  .side-strip ul{list-style:none; margin:0; padding:0;}
+  .side-strip li{font-size:11px; line-height:1.4; padding:6px 0 6px 9px; border-left:2px solid rgba(242,230,196,.25);
+    margin-bottom:2px; cursor:pointer;}
+  .side-strip li:hover{background:rgba(242,230,196,.08);}
+  .side-strip li.won{border-left-color:#5fae6e;} .side-strip li.lost{border-left-color:#c0655a;} .side-strip li.uncertain{border-left-color:#b8a25a;}
+  .side-strip .yr{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10.5px; color:#e0c27a; display:block;}
+  @media (max-width:900px){
+    .side-strip{border-left:none; border-top:2px solid var(--gold); max-height:26vh;}
+  }
+
+  #map{grid-area:map; position:relative; min-height:280px; overflow:hidden;}
+  #map .leaflet-container{width:100%; height:100%; min-height:280px; background:#dde8e8;}
+
+  #legendToggleBtn{
+    position:absolute; bottom:10px; right:10px; z-index:1000; font-family:'IBM Plex Mono',monospace;
+    font-size:11px; letter-spacing:.5px; text-transform:uppercase; background:#2a1c14; color:#f2e6c4;
+    border:1.5px solid var(--gold); padding:7px 12px; cursor:pointer; border-radius:2px; opacity:.92;
+  }
+  #legendToggleBtn:hover{opacity:1;}
+  #legendToggleBtn.active{background:var(--corona); border-color:#f2e6c4;}
+  #legendPanel{
+    display:none; position:absolute; z-index:1400; bottom:52px; right:10px; max-width:270px; max-height:65vh;
+    overflow-y:auto; background:rgba(26,18,12,.96); border:1.5px solid var(--gold); border-radius:4px;
+    padding:12px 14px; color:#f2e6c4; font-size:11px; line-height:1.5;
+  }
+  #legendPanel.open{display:block;}
+  #legendPanel h3{font-family:'Cormorant Garamond',serif; font-size:14px; margin:8px 0 4px; color:var(--gold);
+    border-bottom:1px solid rgba(242,230,196,.3); padding-bottom:2px;}
+  #legendPanel h3:first-child{margin-top:0;}
+  .lg-row{display:flex; align-items:center; gap:7px; margin:3px 0;}
+  .lg-dot{width:12px; height:12px; border-radius:50%; flex-shrink:0; display:inline-block;}
+  .lg-sym{width:16px; text-align:center; flex-shrink:0; font-size:12px;}
+
+  #timeline{grid-area:timeline; background:linear-gradient(180deg,#2a1c14,#1c130d); border-top:3px solid var(--gold);
+    padding:8px 16px; display:flex; align-items:center; gap:8px; color:#f2e6c4; flex-wrap:nowrap; overflow-x:auto;}
+  #playBtn{width:30px;height:30px;border-radius:50%; border:2px solid var(--gold); flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%,#c9924a,#8a5416); color:#2a1c14; font-size:12px; cursor:pointer; flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;}
+  #speedSelect{font-family:'IBM Plex Mono',monospace; font-size:11px; text-align:center; flex-shrink:0;
+    background:#2a1c14; color:#f2e6c4; border:1.5px solid var(--gold); border-radius:3px; padding:4px 2px; cursor:pointer;}
+  .nudgeBtn{font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; text-align:center; flex-shrink:0;
+    background:#2a1c14; color:#f2e6c4; border:1.5px solid var(--gold); border-radius:3px; padding:5px 5px; cursor:pointer; opacity:.85;}
+  #yearSlider{flex:1 1 auto; -webkit-appearance:none; height:4px; background:linear-gradient(90deg,#7a5a25,#c7a862); border-radius:3px; outline:none; min-width:60px;}
+  #yearSlider::-webkit-slider-thumb{-webkit-appearance:none; width:18px;height:18px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#dcb15a,#8f1626 70%); border:2px solid #f2e6c4; cursor:pointer;}
+  #yearInput{width:58px; flex-shrink:0; font-family:'IBM Plex Mono',monospace; font-size:12px; text-align:center;
+    background:#2a1c14; color:#f2e6c4; border:1.5px solid var(--gold); border-radius:3px; padding:4px 2px;}
+  #yearReadout{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; color:#f2e6c4; min-width:48px;
+    flex-shrink:0; text-align:right; display:block;}
+  @media (max-width:700px){
+    #timeline{gap:5px; padding:6px 8px;}
+    .nudgeBtn{display:none;} /* su schermi molto stretti, nascondi i pulsanti di salto rapido: restano play, slider e anno */
+    #speedSelect{display:none;}
+  }
+
+  .popup-ca, .popup-es{font-family:'EB Garamond',serif; font-size:13px; max-width:260px;}
+  .popup-ca b, .popup-es b{color:var(--corona);}
+
+  .divmark{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:15px; cursor:pointer;}
+  @keyframes markPulse{ 0%{ transform:scale(0.3); opacity:0.3; } 60%{ transform:scale(1.35); opacity:1; } 100%{ transform:scale(1); opacity:1; } }
+  .divmark.pulse{ animation:markPulse .5s ease-out; }
+  .m-won{background:radial-gradient(circle,#fff1a8,#ffb032 45%,#c62828 78%); color:#fff;}
+  .m-uncertain{background:radial-gradient(circle,#fff1a8,#ffb032 45%,#c49619 78%); color:#fff;}
+  .m-lost{background:radial-gradient(circle,#fff1a8,#ffb032 45%,#343a48 78%); color:#fff;}
+  .m-siege-imposed{background:radial-gradient(circle,#ffd66e,#ff9628 70%); border:2px solid #b8963a; color:#3a2416;}
+  .m-siege-suffered{background:radial-gradient(circle,#ffd66e,#ff9628 70%); border:2px dashed #8f1626; color:#3a2416;}
+  .m-revolt{background:radial-gradient(circle,#e0c8f0,#9b5fc0 70%); color:#2a1c14;}
+  .m-dedication{background:radial-gradient(circle,#d8f0d0,#5a9b5f 70%); color:#2a1c14;}
+
+  footer.disclaimer{grid-column:1/-1; font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-align:center;
+    color:#8c8270; padding:5px; background:var(--parchment-dark);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div id="headerTitleBlock">
+      <h1 id="titleTxt">La Corona d'Aragó</h1>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.8</span>
+    </div>
+    <div id="headerControls">
+      <button id="fullscreenBtn">⛶ <span id="lblFullscreen">Pantalla completa</span></button>
+      <button id="exitFullscreenBtn">✕ <span id="lblExitFullscreen">Sortir</span></button>
+      <div id="langToggle">
+        <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
+        <button id="btnES" onclick="setLang('es')">ES</button>
+      </div>
+    </div>
+  </header>
+
+  <aside class="mainside">
+    <h2 id="lblVisual">Visualització</h2>
+    <label class="cat-row"><input type="checkbox" id="allTimeToggle"><span class="swatch" style="background:#b8963a;"></span><b><span id="lblAllTime">Mostra totes les èpoques</span></b> <span id="lblAllTimeSub">(ignora l'any)</span></label>
+
+    <h2 id="lblEntitats">Entitats sobiranes (territoris)</h2>
+    <div id="entityChecks"></div>
+
+    <h2 id="lblBatMap">Batalles i esdeveniments al mapa</h2>
+    <label class="cat-row"><input type="checkbox" id="battlesWonToggle"><span class="swatch" style="background:radial-gradient(circle,#fff1a8,#ffb032 45%,#c62828 78%);border-radius:50%;"></span><span id="lblBWon">Batalles guanyades</span></label>
+    <label class="cat-row"><input type="checkbox" id="battlesUncertainToggle"><span class="swatch" style="background:radial-gradient(circle,#fff1a8,#ffb032 45%,#c49619 78%);border-radius:50%;"></span><span id="lblBUnc">Batalles d'esdeveniment incert</span></label>
+    <label class="cat-row"><input type="checkbox" id="battlesLostToggle"><span class="swatch" style="background:radial-gradient(circle,#fff1a8,#ffb032 45%,#343a48 78%);border-radius:50%;"></span><span id="lblBLost">Batalles perdudes</span></label>
+    <label class="cat-row"><input type="checkbox" id="siegeImposedToggle"><span class="swatch" style="background:radial-gradient(circle,#ffd66e,#ff9628 70%);border-radius:50%;border:1.5px solid #b8963a;"></span><span id="lblSImp">Setges imposats</span></label>
+    <label class="cat-row"><input type="checkbox" id="siegeSufferedToggle"><span class="swatch" style="background:radial-gradient(circle,#ffd66e,#ff9628 70%);border-radius:50%;border:1.5px dashed #8f1626;"></span><span id="lblSSuf">Setges patits</span></label>
+    <label class="cat-row"><input type="checkbox" id="revoltToggle"><span class="swatch" style="background:radial-gradient(circle,#e0c8f0,#9b5fc0 70%);border-radius:50%;"></span><span id="lblRevolt">Revoltes</span></label>
+    <label class="cat-row"><input type="checkbox" id="dedicationToggle"><span class="swatch" style="background:radial-gradient(circle,#d8f0d0,#5a9b5f 70%);border-radius:50%;"></span><span id="lblDed">Dedicacions / adhesions</span></label>
+
+    <h2 id="lblFasce">Cronologies sincronitzades</h2>
+    <label class="cat-row"><input type="checkbox" id="chronToggle"><span class="swatch" style="background:#8f1626;"></span><span id="lblChron">Cronologia general</span></label>
+    <label class="cat-row"><input type="checkbox" id="monarquesToggle"><span class="swatch" style="background:#6a3b8f;"></span><span id="lblMonarquesChk">Seqüència de monarques</span></label>
+    <label class="cat-row"><input type="checkbox" id="guerresToggle"><span class="swatch" style="background:#a1471f;"></span><span id="lblGuerresChk">Guerres i campanyes</span></label>
+    <label class="cat-row"><input type="checkbox" id="personatgesToggle"><span class="swatch" style="background:#8f6b2a;"></span><span id="lblPersonatgesChk">Grans personatges</span></label>
+    <label class="cat-row"><input type="checkbox" id="batallesChronToggle"><span class="swatch" style="background:radial-gradient(circle,#ffd66e,#ff9628 70%);"></span><span id="lblBatallesChk">Batalles i setges (llista)</span></label>
+  </aside>
+
+  <div id="map">
+    <button id="legendToggleBtn">☰ <span id="lblLegendBtn">Llegenda</span></button>
+    <div id="legendPanel"></div>
+  </div>
+
+  <div id="timeline">
+    <button id="playBtn">▶</button>
+    <select id="speedSelect" title="Velocitat">
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="2">2×</option>
+    </select>
+    <button class="nudgeBtn" id="nudgeBack10">«10</button>
+    <button class="nudgeBtn" id="nudgeBack1">‹1</button>
+    <input type="range" id="yearSlider" min="800" max="1720" value="1137" step="1">
+    <button class="nudgeBtn" id="nudgeFwd1">1›</button>
+    <button class="nudgeBtn" id="nudgeFwd10">10»</button>
+    <input type="number" id="yearInput" min="800" max="1720" value="1137">
+    <div id="yearReadout">1137</div>
+  </div>
+
+  <aside id="chronPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="chronToggle">✕</button><h3 id="chronPanelTitle"></h3><ul id="listCronologia"></ul></aside>
+  <aside id="monarquesPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="monarquesToggle">✕</button><h3 id="monarquesPanelTitle"></h3><ul id="listMonarques"></ul></aside>
+  <aside id="guerresPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="guerresToggle">✕</button><h3 id="guerresPanelTitle"></h3><ul id="listGuerres"></ul></aside>
+  <aside id="personatgesPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="personatgesToggle">✕</button><h3 id="personatgesPanelTitle"></h3><ul id="listPersonatges"></ul></aside>
+  <aside id="batallesChronPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="batallesChronToggle">✕</button><h3 id="batallesPanelTitle"></h3><ul id="listBatallesChron"></ul></aside>
+
+  <footer class="disclaimer" id="disclaimerTxt"></footer>
+</div>
+
+<script>
+/* =======================================================================
+   DADES — esborrany v0.8. Camps bilingües amb sufix _ca / _es.
+   ======================================================================= */
+const ENTITATS = {
+  "Comtats catalans":   {color:"#7a2e1d", label_ca:"Comtats catalans (pre-unió)", label_es:"Condados catalanes (pre-unión)"},
+  "Regne d'Aragó":      {color:"#a1471f", label_ca:"Regne d'Aragó (pre-unió)",    label_es:"Reino de Aragón (pre-unión)"},
+  "Corona d'Aragó":     {color:"#8f1626", label_ca:"Corona d'Aragó",              label_es:"Corona de Aragón"},
+  "Regne de Mallorca":  {color:"#3f6b34", label_ca:"Regne de Mallorca (indep.)",  label_es:"Reino de Mallorca (indep.)"},
+  "Companyia Catalana": {color:"#6a3b8f", label_ca:"Ducats grecs (Comp. Catalana)", label_es:"Ducados griegos (Comp. Catalana)"},
+  "Jutjat d'Arborea":   {color:"#4a6b8f", label_ca:"Jutjat d'Arborea (Sardenya)", label_es:"Judicado de Arborea (Cerdeña)"},
+  "Regne d'Espanya":    {color:"#2e5e8c", label_ca:"Monarquia Hispànica (post-1516)", label_es:"Monarquía Hispánica (post-1516)"},
+  "Regne Unit":         {color:"#4a7a3a", label_ca:"Regne Unit (cessions d'Utrecht)", label_es:"Reino Unido (cesiones de Utrecht)"},
+  "Regne de França":    {color:"#7a5a9a", label_ca:"Regne de França (cessions)", label_es:"Reino de Francia (cesiones)"}
+};
+
+const TERRITORIS = [
+ {n_ca:"Comtat de Barcelona", n_es:"Condado de Barcelona", ent:"Comtats catalans", ys:878, ye:1137, lat:41.3873, lon:2.1686,
+  note_ca:"Nucli originari de la futura Corona.", note_es:"Núcleo originario de la futura Corona."},
+ {n_ca:"Comtat de Girona", n_es:"Condado de Girona", ent:"Comtats catalans", ys:878, ye:1137, lat:41.9794, lon:2.8214,
+  note_ca:"Unit a Barcelona des de Guifré el Pilós.", note_es:"Unido a Barcelona desde Wifredo el Velloso."},
+ {n_ca:"Comtat d'Osona", n_es:"Condado de Osona", ent:"Comtats catalans", ys:878, ye:1137, lat:41.9301, lon:2.2622,
+  note_ca:"Repoblat i unit per Guifré el Pilós.", note_es:"Repoblado y unido por Wifredo el Velloso."},
+ {n_ca:"Comtat d'Urgell", n_es:"Condado de Urgel", ent:"Comtats catalans", ys:900, ye:1413, lat:41.9349, lon:1.1281,
+  note_ca:"Comtat pirinenc amb autonomia perllongada; incorporat a la Corona el 1413.", note_es:"Condado pirenaico con autonomía prolongada; incorporado a la Corona en 1413."},
+ {n_ca:"Comtat de Pallars", n_es:"Condado de Pallars", ent:"Comtats catalans", ys:872, ye:1500, lat:42.4667, lon:1.15,
+  note_ca:"Comtat pirinenc, dividit en Sobirà i Jussà.", note_es:"Condado pirenaico, dividido en Sobirà y Jussà."},
+ {n_ca:"Comtat d'Empúries", n_es:"Condado de Ampurias", ent:"Comtats catalans", ys:817, ye:1401, lat:42.1339, lon:3.1219,
+  note_ca:"Incorporat definitivament a la Corona el 1401.", note_es:"Incorporado definitivamente a la Corona en 1401."},
+ {n_ca:"Comtat de Cerdanya", n_es:"Condado de Cerdaña", ent:"Comtats catalans", ys:817, ye:1117, lat:42.4167, lon:1.9667,
+  note_ca:"Unit a Barcelona el 1117.", note_es:"Unido a Barcelona en 1117."},
+ {n_ca:"Comtat de Rosselló", n_es:"Condado de Rosellón", ent:"Comtats catalans", ys:900, ye:1172, lat:42.6986, lon:2.8956,
+  note_ca:"Unit definitivament a Barcelona el 1172.", note_es:"Unido definitivamente a Barcelona en 1172."},
+ {n_ca:"Comtat de Besalú", n_es:"Condado de Besalú", ent:"Comtats catalans", ys:988, ye:1111, lat:42.1994, lon:2.6994,
+  note_ca:"Absorbit pel Comtat de Barcelona el 1111.", note_es:"Absorbido por el Condado de Barcelona en 1111."},
+ {n_ca:"Principat de Catalunya", n_es:"Principado de Cataluña", ent:"Corona d'Aragó", ys:1137, ye:1516, lat:41.3873, lon:2.1686,
+  note_ca:"Continua com a Principat dins la Corona.", note_es:"Continúa como Principado dentro de la Corona."},
+ {n_ca:"Principat de Catalunya (Monarquia Hispànica)", n_es:"Principado de Cataluña (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.3873, lon:2.1686,
+  note_ca:"Manté institucions pròpies (Corts, Generalitat) fins a la Nova Planta de 1716.", note_es:"Mantiene instituciones propias (Cortes, Generalitat) hasta la Nueva Planta de 1716."},
+ {n_ca:"Rosselló i Cerdanya (cedits a França)", n_es:"Rosellón y Cerdaña (cedidos a Francia)", ent:"Regne de França", ys:1659, ye:1720, lat:42.6986, lon:2.8956,
+  note_ca:"Tractat dels Pirineus (1659): cessió definitiva a França, fora de la Corona d'Aragó/Espanya.", note_es:"Tratado de los Pirineos (1659): cesión definitiva a Francia, fuera de la Corona de Aragón/España."},
+ {n_ca:"Ciutat de Tortosa", n_es:"Ciudad de Tortosa", ent:"Corona d'Aragó", ys:1148, ye:1516, lat:40.8126, lon:0.5211,
+  note_ca:"Conquerida el 1148 pel comte-príncep Ramon Berenguer IV.", note_es:"Conquistada en 1148 por el conde-príncipe Ramón Berenguer IV."},
+ {n_ca:"Ciutat de Tortosa (Monarquia Hispànica)", n_es:"Ciudad de Tortosa (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:40.8126, lon:0.5211,
+  note_ca:"Segueix la sort del Principat.", note_es:"Sigue la suerte del Principado."},
+ {n_ca:"Ciutat de Lleida", n_es:"Ciudad de Lérida", ent:"Corona d'Aragó", ys:1149, ye:1516, lat:41.6176, lon:0.6200,
+  note_ca:"Conquerida el 1149; incorporada al Principat.", note_es:"Conquistada en 1149; incorporada al Principado."},
+ {n_ca:"Ciutat de Lleida (Monarquia Hispànica)", n_es:"Ciudad de Lérida (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.6176, lon:0.6200,
+  note_ca:"Segueix la sort del Principat.", note_es:"Sigue la suerte del Principado."},
+ {n_ca:"Regne d'Aragó (independent)", n_es:"Reino de Aragón (independiente)", ent:"Regne d'Aragó", ys:1035, ye:1137, lat:41.6488, lon:-0.8891,
+  note_ca:"Regne independent abans de la unió dinàstica.", note_es:"Reino independiente antes de la unión dinástica."},
+ {n_ca:"Regne d'Aragó (dins la Corona)", n_es:"Reino de Aragón (dentro de la Corona)", ent:"Corona d'Aragó", ys:1137, ye:1516, lat:41.6488, lon:-0.8891,
+  note_ca:"Regne matriu de la Corona.", note_es:"Reino matriz de la Corona."},
+ {n_ca:"Regne d'Aragó (Monarquia Hispànica)", n_es:"Reino de Aragón (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.6488, lon:-0.8891,
+  note_ca:"Manté furs propis fins a la Nova Planta de 1707.", note_es:"Mantiene fueros propios hasta la Nueva Planta de 1707."},
+ {n_ca:"Regne de Mallorca (1a incorporació)", n_es:"Reino de Mallorca (1ª incorporación)", ent:"Corona d'Aragó", ys:1229, ye:1276, lat:39.5696, lon:2.6502,
+  note_ca:"Conquesta de Jaume I.", note_es:"Conquista de Jaime I."},
+ {n_ca:"Regne de Mallorca (independent)", n_es:"Reino de Mallorca (independiente)", ent:"Regne de Mallorca", ys:1276, ye:1349, lat:39.5696, lon:2.6502,
+  note_ca:"Separat temporalment de la Corona sota la línia de Jaume II de Mallorca.", note_es:"Separado temporalmente de la Corona bajo la línea de Jaime II de Mallorca."},
+ {n_ca:"Regne de Mallorca (reincorporat)", n_es:"Reino de Mallorca (reincorporado)", ent:"Corona d'Aragó", ys:1349, ye:1516, lat:39.5696, lon:2.6502,
+  note_ca:"Reincorporat per Pere el Cerimoniós.", note_es:"Reincorporado por Pedro el Ceremonioso."},
+ {n_ca:"Regne de Mallorca (Monarquia Hispànica)", n_es:"Reino de Mallorca (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.5696, lon:2.6502,
+  note_ca:"Manté institucions pròpies fins al Decret de Nova Planta.", note_es:"Mantiene instituciones propias hasta el Decreto de Nueva Planta."},
+ {n_ca:"Illa de Menorca", n_es:"Isla de Menorca", ent:"Corona d'Aragó", ys:1287, ye:1516, lat:39.9496, lon:4.1104,
+  note_ca:"Vassallatge des de 1231; conquesta i annexió plena per Alfons III el gener de 1287.", note_es:"Vasallaje desde 1231; conquista y anexión plena por Alfonso III en enero de 1287."},
+ {n_ca:"Illa de Menorca (Monarquia Hispànica)", n_es:"Isla de Menorca (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:39.9496, lon:4.1104,
+  note_ca:"Part de la Monarquia Hispànica fins a la cessió d'Utrecht.", note_es:"Parte de la Monarquía Hispánica hasta la cesión de Utrecht."},
+ {n_ca:"Illa de Menorca (cedida al Regne Unit)", n_es:"Isla de Menorca (cedida al Reino Unido)", ent:"Regne Unit", ys:1713, ye:1720, lat:39.9496, lon:4.1104,
+  note_ca:"Cedida al Regne Unit pel Tractat d'Utrecht (1713).", note_es:"Cedida al Reino Unido por el Tratado de Utrecht (1713)."},
+ {n_ca:"Illa d'Eivissa", n_es:"Isla de Ibiza", ent:"Corona d'Aragó", ys:1235, ye:1516, lat:38.9067, lon:1.4206,
+  note_ca:"Conquerida el 1235 sota patrocini de Jaume I.", note_es:"Conquistada en 1235 bajo patrocinio de Jaime I."},
+ {n_ca:"Illa d'Eivissa (Monarquia Hispànica)", n_es:"Isla de Ibiza (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:38.9067, lon:1.4206,
+  note_ca:"Segueix la sort del Regne de Mallorca.", note_es:"Sigue la suerte del Reino de Mallorca."},
+ {n_ca:"Regne de València", n_es:"Reino de Valencia", ent:"Corona d'Aragó", ys:1238, ye:1516, lat:39.4699, lon:-0.3763,
+  note_ca:"Conquesta de Jaume I.", note_es:"Conquista de Jaime I."},
+ {n_ca:"Regne de València (Monarquia Hispànica)", n_es:"Reino de Valencia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.4699, lon:-0.3763,
+  note_ca:"Manté furs propis fins a la Nova Planta de 1707.", note_es:"Mantiene fueros propios hasta la Nueva Planta de 1707."},
+ {n_ca:"Regne de Múrcia (protectorat/repartiment)", n_es:"Reino de Murcia (protectorado/reparto)", ent:"Corona d'Aragó", ys:1296, ye:1304, lat:37.9922, lon:-1.1307,
+  note_ca:"Ocupat breument per Jaume II; cedit a Castella pel Tractat d'Elx (1305), llevat d'Oriola i Alacant.", note_es:"Ocupado brevemente por Jaime II; cedido a Castilla por el Tratado de Elche (1305), salvo Orihuela y Alicante."},
+ {n_ca:"Regne de Sicília", n_es:"Reino de Sicilia", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:37.5, lon:14.0,
+  note_ca:"Vespres Sicilianes (1282). Pel Tractat d'Anagni (1295) Jaume II el cedí formalment al Papat, però el seu germà Frederic III continuà governant-lo com a regne separat fins a la reunificació de fet el 1409-1442.", note_es:"Vísperas Sicilianas (1282). Por el Tratado de Anagni (1295) Jaime II lo cedió formalmente al Papado, pero su hermano Federico III siguió gobernándolo como reino separado hasta la reunificación de facto en 1409-1442."},
+ {n_ca:"Regne de Sicília (Monarquia Hispànica)", n_es:"Reino de Sicilia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:37.5, lon:14.0,
+  note_ca:"Continua com a regne separat dins la Monarquia Hispànica fins al segle XVIII.", note_es:"Continúa como reino separado dentro de la Monarquía Hispánica hasta el siglo XVIII."},
+ {n_ca:"Illa de Còrsega (feu pontifici, mai efectivament dominada)", n_es:"Isla de Córcega (feudo pontificio, nunca dominada efectivamente)", ent:"Corona d'Aragó", nominal:1, ys:1297, ye:1350, lat:42.0396, lon:9.0129,
+  note_ca:"Investida pel papa Bonifaci VIII el 1297 junt amb Sardenya, però la Corona no hi exercí mai control efectiu, en guerra civil entre genovesos.", note_es:"Investida por el papa Bonifacio VIII en 1297 junto con Cerdeña, pero la Corona nunca ejerció control efectivo, en guerra civil entre genoveses."},
+ {n_ca:"Jutjat d'Arborea", n_es:"Judicado de Arborea", ent:"Jutjat d'Arborea", ys:1100, ye:1420, lat:39.8833, lon:8.5667,
+  note_ca:"Darrer dels jutjats sards independents; resistí la conquesta catalana fins al 1420.", note_es:"Último de los judicados sardos independientes; resistió la conquista catalana hasta 1420."},
+ {n_ca:"Regne de Sardenya", n_es:"Reino de Cerdeña", ent:"Corona d'Aragó", ys:1324, ye:1516, lat:40.1, lon:9.1,
+  note_ca:"Conquesta llarga i contestada pel Jutjat d'Arborea i per Genova/Pisa; Corts pròpies des de 1355.", note_es:"Conquista larga y disputada por el Judicado de Arborea y por Génova/Pisa; Cortes propias desde 1355."},
+ {n_ca:"Regne de Sardenya (Monarquia Hispànica)", n_es:"Reino de Cerdeña (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.1, lon:9.1,
+  note_ca:"Cedit a l'Àustria (Utrecht, 1713) i després al Piemont-Savoia (1720).", note_es:"Cedido a Austria (Utrecht, 1713) y después a Piamonte-Saboya (1720)."},
+ {n_ca:"Ducat d'Atenes", n_es:"Ducado de Atenas", ent:"Companyia Catalana", ys:1311, ye:1388, lat:37.9838, lon:23.7275,
+  note_ca:"Governat pels almogàvers de la Companyia Catalana; sobirania assumida per Pere III el 1380, perdut el 1388.", note_es:"Gobernado por los almogávares de la Compañía Catalana; soberanía asumida por Pedro III en 1380, perdido en 1388."},
+ {n_ca:"Ducat de Neopàtria", n_es:"Ducado de Neopatria", ent:"Companyia Catalana", ys:1319, ye:1390, lat:38.8, lon:22.6,
+  note_ca:"Annexat poc després d'Atenes; perdut el 1390.", note_es:"Anexado poco después de Atenas; perdido en 1390."},
+ {n_ca:"Comtat de Salona", n_es:"Condado de Salona", ent:"Companyia Catalana", ys:1318, ye:1394, lat:38.5883, lon:22.2314,
+  note_ca:"Territori grec sota domini de la Companyia Catalana; caigué en mans turques el 1394.", note_es:"Territorio griego bajo dominio de la Compañía Catalana; cayó en manos turcas en 1394."},
+ {n_ca:"Illa d'Egina", n_es:"Isla de Egina", ent:"Companyia Catalana", ys:1380, ye:1418, lat:37.7484, lon:23.4291,
+  note_ca:"Darrer reducte insular de sobirania catalana a l'Egeu abans de Piada.", note_es:"Último reducto insular de soberanía catalana en el Egeo antes de Piada."},
+ {n_ca:"Illa de Piada", n_es:"Isla de Piada", ent:"Companyia Catalana", ys:1380, ye:1460, lat:39.15, lon:26.15,
+  note_ca:"Últim territori grec sota sobirania catalana, perdut el 1460.", note_es:"Último territorio griego bajo soberanía catalana, perdido en 1460."},
+ {n_ca:"Regne de Nàpols", n_es:"Reino de Nápoles", ent:"Corona d'Aragó", ys:1442, ye:1458, lat:40.8518, lon:14.2681,
+  note_ca:"Conquesta d'Alfons el Magnànim; separat de la resta de la Corona a la seva mort.", note_es:"Conquista de Alfonso el Magnánimo; separado del resto de la Corona a su muerte."},
+ {n_ca:"Regne de Nàpols (definitiu)", n_es:"Reino de Nápoles (definitivo)", ent:"Corona d'Aragó", ys:1503, ye:1516, lat:40.8518, lon:14.2681,
+  note_ca:"Reincorporat sota Ferran el Catòlic.", note_es:"Reincorporado bajo Fernando el Católico."},
+ {n_ca:"Regne de Nàpols (Monarquia Hispànica)", n_es:"Reino de Nápoles (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.8518, lon:14.2681,
+  note_ca:"Virregnat espanyol fins a la Guerra de Successió.", note_es:"Virreinato español hasta la Guerra de Sucesión."},
+ {n_ca:"Illa de Malta", n_es:"Isla de Malta", ent:"Corona d'Aragó", ys:1282, ye:1522, lat:35.8997, lon:14.5146,
+  note_ca:"Arribada amb Sicília el 1282; cedida als Hospitalers (Orde de Malta) el 1522.", note_es:"Llegada con Sicilia en 1282; cedida a los Hospitalarios (Orden de Malta) en 1522."},
+ {n_ca:"Comtat de Barcelona — expansió a Tarragona", n_es:"Condado de Barcelona — expansión a Tarragona", ent:"Comtats catalans", ys:1129, ye:1137, lat:41.1189, lon:1.2445,
+  note_ca:"Repoblament definitiu de Tarragona sota Ramon Berenguer III/IV.", note_es:"Repoblamiento definitivo de Tarragona bajo Ramón Berenguer III/IV."},
+ {n_ca:"Illa de Kastellórizo", n_es:"Isla de Castellórizo", ent:"Corona d'Aragó", ys:1450, ye:1458, lat:36.1497, lon:29.5883,
+  note_ca:"Petita illa de l'Egeu reconeguda a Alfons el Magnànim pel papa Nicolau V el 1450.", note_es:"Pequeña isla del Egeo reconocida a Alfonso el Magnánimo por el papa Nicolás V en 1450."},
+ {n_ca:"Zona d'influència nord-africana (Tremecén/Ifríqiya)", n_es:"Zona de influencia norteafricana (Tremecén/Ifriquiya)", ent:"Corona d'Aragó", nominal:1, ys:1291, ye:1350, lat:35.5, lon:2.0,
+  note_ca:"Acord de Monteagudo (1291) amb Castella: zona d'influència comercial i militar catalanoaragonesa al Magrib central.", note_es:"Acuerdo de Monteagudo (1291) con Castilla: zona de influencia comercial y militar catalanoaragonesa en el Magreb central."},
+ {n_ca:"Marca Hispànica (Girona-Barcelona carolíngia)", n_es:"Marca Hispánica (Girona-Barcelona carolingia)", ent:"Regne d'Aragó", ys:801, ye:878, lat:41.6, lon:2.0,
+  note_ca:"Zona tampó carolíngia, precedent dels comtats catalans.", note_es:"Zona tampón carolingia, precedente de los condados catalanes."},
+ {n_ca:"Comtat de Barcelona (vassallatge franc, pre-independència)", n_es:"Condado de Barcelona (vasallaje franco, pre-independencia)", ent:"Comtats catalans", ys:801, ye:988, lat:41.3873, lon:2.1686,
+  note_ca:"Encara nominalment sota sobirania franca fins a Borrell II.", note_es:"Todavía nominalmente bajo soberanía franca hasta Borrell II."}
+,
+ /* --- localitats detallades a partir del mapa 'Expansión peninsular de la Corona de Aragón' (Wikimedia) --- */
+ {n_ca:"Osca", n_es:"Huesca", ent:"Regne d'Aragó", ys:1096, ye:1516, lat:42.1401, lon:-0.4084,
+  note_ca:"Conquerida per Pere I el novembre de 1096.", note_es:"Conquistada por Pedro I en noviembre de 1096."},
+ {n_ca:"Barbastre (conquesta definitiva)", n_es:"Barbastro (conquista definitiva)", ent:"Regne d'Aragó", ys:1100, ye:1516, lat:42.0369, lon:-0.1258,
+  note_ca:"Presa i perduda varis cops des del 1064; definitivament aragonesa el 1100.", note_es:"Tomada y perdida varias veces desde 1064; definitivamente aragonesa en 1100."},
+ {n_ca:"Egea (Ejea de los Caballeros)", n_es:"Ejea de los Caballeros", ent:"Regne d'Aragó", ys:1110, ye:1516, lat:42.1274, lon:-1.1387,
+  note_ca:"Plaça forta a la frontera occidental aragonesa.", note_es:"Plaza fuerte en la frontera occidental aragonesa."},
+ {n_ca:"Tauste", n_es:"Tauste", ent:"Regne d'Aragó", ys:1105, ye:1516, lat:41.9122, lon:-1.2537,
+  note_ca:"Incorporada durant l'expansió d'Alfons I.", note_es:"Incorporada durante la expansión de Alfonso I."},
+ {n_ca:"Saragossa (conquesta)", n_es:"Zaragoza (conquista)", ent:"Regne d'Aragó", ys:1118, ye:1516, lat:41.6488, lon:-0.8891,
+  note_ca:"Conquerida per Alfons I el Bataller el desembre de 1118; nova capital del regne.", note_es:"Conquistada por Alfonso I el Batallador en diciembre de 1118; nueva capital del reino."},
+ {n_ca:"Tarassona", n_es:"Tarazona", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.9061, lon:-1.7278,
+  note_ca:"Incorporada poc després de la caiguda de Saragossa.", note_es:"Incorporada poco después de la caída de Zaragoza."},
+ {n_ca:"Tudela", n_es:"Tudela", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:42.0662, lon:-1.6087,
+  note_ca:"Conquerida durant la mateixa campanya de 1119.", note_es:"Conquistada durante la misma campaña de 1119."},
+ {n_ca:"Borja", n_es:"Borja", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.8386, lon:-1.5388,
+  note_ca:"Incorporada el 1119.", note_es:"Incorporada en 1119."},
+ {n_ca:"Àgreda", n_es:"Ágreda", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.85, lon:-1.9167,
+  note_ca:"Extrem occidental de l'expansió aragonesa d'Alfons I.", note_es:"Extremo occidental de la expansión aragonesa de Alfonso I."},
+ {n_ca:"Calataiud", n_es:"Calatayud", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:41.3528, lon:-1.6432,
+  note_ca:"Conquerida el 1120.", note_es:"Conquistada en 1120."},
+ {n_ca:"Darocca", n_es:"Daroca", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:41.1167, lon:-1.4167,
+  note_ca:"Conquerida el 1120.", note_es:"Conquistada en 1120."},
+ {n_ca:"Fuentes de Ebre", n_es:"Fuentes de Ebro", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.5122, lon:-0.6323,
+  note_ca:"Incorporada el 1119.", note_es:"Incorporada en 1119."},
+ {n_ca:"Belchite", n_es:"Belchite", ent:"Regne d'Aragó", ys:1118, ye:1516, lat:41.301, lon:-0.7508,
+  note_ca:"Incorporada el 1118.", note_es:"Incorporada en 1118."},
+ {n_ca:"Medinaceli (àrea fronterera)", n_es:"Medinaceli (área fronteriza)", ent:"Regne d'Aragó", ys:1122, ye:1516, lat:41.1667, lon:-2.4333,
+  note_ca:"Zona fronterera amb Castella.", note_es:"Zona fronteriza con Castilla."},
+ {n_ca:"Molina (frontera aragonesa)", n_es:"Molina (frontera aragonesa)", ent:"Regne d'Aragó", ys:1128, ye:1516, lat:40.8458, lon:-1.8886,
+  note_ca:"Zona fronterera meridional.", note_es:"Zona fronteriza meridional."},
+ {n_ca:"Casp", n_es:"Caspe", ent:"Corona d'Aragó", ys:1168, ye:1516, lat:41.235, lon:-0.0333,
+  note_ca:"Incorporada al Regne d'Aragó.", note_es:"Incorporada al Reino de Aragón."},
+ {n_ca:"Alcanyís", n_es:"Alcañiz", ent:"Corona d'Aragó", ys:1157, ye:1516, lat:41.05, lon:-0.1333,
+  note_ca:"Encomanada a l'Orde de Calatrava el 1179.", note_es:"Encomendada a la Orden de Calatrava en 1179."},
+ {n_ca:"Terol", n_es:"Teruel", ent:"Corona d'Aragó", ys:1171, ye:1516, lat:40.3456, lon:-1.1065,
+  note_ca:"Repoblada per Alfons II el 1171.", note_es:"Repoblada por Alfonso II en 1171."},
+ {n_ca:"Albarrasí", n_es:"Albarracín", ent:"Corona d'Aragó", ys:1285, ye:1516, lat:40.4083, lon:-1.4394,
+  note_ca:"Antic senyoriu independent, incorporat el 1285.", note_es:"Antiguo señorío independiente, incorporado en 1285."},
+ {n_ca:"Àger", n_es:"Ager", ent:"Comtats catalans", ys:1024, ye:1516, lat:41.8083, lon:0.75,
+  note_ca:"Vescomtat pirinenc annexat el 1024.", note_es:"Vizcondado pirenaico anexado en 1024."},
+ {n_ca:"Agramunt", n_es:"Agramunt", ent:"Comtats catalans", ys:1070, ye:1516, lat:41.7833, lon:1.1,
+  note_ca:"Incorporat el 1070.", note_es:"Incorporado en 1070."},
+ {n_ca:"Balaguer", n_es:"Balaguer", ent:"Comtats catalans", ys:1105, ye:1516, lat:41.7903, lon:0.8075,
+  note_ca:"Capital del comtat d'Urgell.", note_es:"Capital del condado de Urgel."},
+ {n_ca:"Alguaire", n_es:"Alguaire", ent:"Comtats catalans", ys:1147, ye:1516, lat:41.7333, lon:0.5667,
+  note_ca:"Incorporat el 1147.", note_es:"Incorporado en 1147."},
+ {n_ca:"Fraga", n_es:"Fraga", ent:"Comtats catalans", ys:1149, ye:1516, lat:41.5225, lon:0.3467,
+  note_ca:"Conquerida a l'octubre de 1149.", note_es:"Conquistada en octubre de 1149."},
+ {n_ca:"Mequinensa", n_es:"Mequinenza", ent:"Comtats catalans", ys:1133, ye:1516, lat:41.3722, lon:0.2967,
+  note_ca:"Conquesta iniciada el 1133-34, completada el 1149.", note_es:"Conquista iniciada en 1133-34, completada en 1149."},
+ {n_ca:"Tàrrega", n_es:"Tárrega", ent:"Comtats catalans", ys:1056, ye:1516, lat:41.6469, lon:1.14,
+  note_ca:"Un dels primers establiments del Marquesat de Lleida.", note_es:"Uno de los primeros asentamientos del Marquesado de Lérida."},
+ {n_ca:"Rocafort de Queralt", n_es:"Rocafort de Queralt", ent:"Comtats catalans", ys:1076, ye:1516, lat:41.4667, lon:1.2833,
+  note_ca:"Incorporat el 1076.", note_es:"Incorporado en 1076."},
+ {n_ca:"Montblanc", n_es:"Montblanc", ent:"Comtats catalans", ys:1080, ye:1516, lat:41.3758, lon:1.1611,
+  note_ca:"Incorporat el 1080.", note_es:"Incorporado en 1080."},
+ {n_ca:"Reus", n_es:"Reus", ent:"Comtats catalans", ys:1129, ye:1516, lat:41.1561, lon:1.1069,
+  note_ca:"Incorporat cap al 1129.", note_es:"Incorporado hacia 1129."},
+ {n_ca:"Prades", n_es:"Prades", ent:"Comtats catalans", ys:1153, ye:1516, lat:41.3167, lon:0.9667,
+  note_ca:"Incorporat cap al 1153.", note_es:"Incorporado hacia 1153."},
+ {n_ca:"Falset", n_es:"Falset", ent:"Comtats catalans", ys:1151, ye:1516, lat:41.1447, lon:0.8189,
+  note_ca:"Incorporat cap al 1151.", note_es:"Incorporado hacia 1151."},
+ {n_ca:"Miravet", n_es:"Miravet", ent:"Comtats catalans", ys:1153, ye:1516, lat:41.0389, lon:0.5389,
+  note_ca:"Plaça forta sobre l'Ebre, més tard seu templera.", note_es:"Plaza fuerte sobre el Ebro, más tarde sede templaria."},
+ {n_ca:"Amposta", n_es:"Amposta", ent:"Comtats catalans", ys:1149, ye:1516, lat:40.7093, lon:0.581,
+  note_ca:"Incorporada al Marquesat de Tortosa cap al 1149.", note_es:"Incorporada al Marquesado de Tortosa hacia 1149."},
+ {n_ca:"Morella", n_es:"Morella", ent:"Corona d'Aragó", ys:1232, ye:1516, lat:40.6167, lon:-0.1,
+  note_ca:"Vassallatge des de 1117/1170; incorporació plena el 1232.", note_es:"Vasallaje desde 1117/1170; incorporación plena en 1232."},
+ {n_ca:"Cantavieja", n_es:"Cantavieja", ent:"Corona d'Aragó", ys:1169, ye:1516, lat:40.5225, lon:-0.4058,
+  note_ca:"Incorporada el 1169.", note_es:"Incorporada en 1169."},
+ {n_ca:"Alfambra", n_es:"Alfambra", ent:"Corona d'Aragó", ys:1174, ye:1516, lat:40.5167, lon:-1.0333,
+  note_ca:"Incorporada el 1174.", note_es:"Incorporada en 1174."},
+ {n_ca:"Mora de Rubielos", n_es:"Mora de Rubielos", ent:"Corona d'Aragó", ys:1171, ye:1516, lat:40.25, lon:-0.75,
+  note_ca:"Incorporada el 1171.", note_es:"Incorporada en 1171."},
+ {n_ca:"Rubielos de Mora", n_es:"Rubielos de Mora", ent:"Corona d'Aragó", ys:1204, ye:1516, lat:40.1833, lon:-0.65,
+  note_ca:"Incorporada el 1204.", note_es:"Incorporada en 1204."},
+ {n_ca:"El Toro", n_es:"El Toro", ent:"Corona d'Aragó", ys:1229, ye:1516, lat:39.8833, lon:-0.7833,
+  note_ca:"Incorporada el 1229, a l'inici de la campanya valenciana.", note_es:"Incorporada en 1229, al inicio de la campaña valenciana."},
+ {n_ca:"Vilafranca (del Cid)", n_es:"Villafranca del Cid", ent:"Corona d'Aragó", ys:1239, ye:1516, lat:40.4167, lon:-0.25,
+  note_ca:"Incorporada el 1239.", note_es:"Incorporada en 1239."},
+ {n_ca:"Peníscola", n_es:"Peñíscola", ent:"Corona d'Aragó", ys:1233, ye:1516, lat:40.3589, lon:0.4083,
+  note_ca:"Incorporada el 1233.", note_es:"Incorporada en 1233."},
+ {n_ca:"Vinaròs", n_es:"Vinaròs", ent:"Corona d'Aragó", ys:1233, ye:1516, lat:40.4667, lon:0.4667,
+  note_ca:"Incorporada el 1233.", note_es:"Incorporada en 1233."},
+ {n_ca:"Castelló de la Plana", n_es:"Castellón de la Plana", ent:"Corona d'Aragó", ys:1233, ye:1516, lat:39.9864, lon:-0.0513,
+  note_ca:"Incorporada el 1233.", note_es:"Incorporada en 1233."},
+ {n_ca:"Borriana", n_es:"Burriana", ent:"Corona d'Aragó", ys:1233, ye:1516, lat:39.8886, lon:-0.0811,
+  note_ca:"Incorporada el 1233.", note_es:"Incorporada en 1233."},
+ {n_ca:"Sagunt", n_es:"Sagunto", ent:"Corona d'Aragó", ys:1238, ye:1516, lat:39.6772, lon:-0.2775,
+  note_ca:"Incorporada poc abans de la capital.", note_es:"Incorporada poco antes de la capital."},
+ {n_ca:"Llíria", n_es:"Liria", ent:"Corona d'Aragó", ys:1248, ye:1516, lat:39.6272, lon:-0.5942,
+  note_ca:"Incorporada el 1248.", note_es:"Incorporada en 1248."},
+ {n_ca:"Alzira", n_es:"Alcira", ent:"Corona d'Aragó", ys:1242, ye:1516, lat:39.15, lon:-0.4333,
+  note_ca:"Incorporada el 1242.", note_es:"Incorporada en 1242."},
+ {n_ca:"Sueca", n_es:"Sueca", ent:"Corona d'Aragó", ys:1244, ye:1516, lat:39.2, lon:-0.3167,
+  note_ca:"Incorporada el 1244.", note_es:"Incorporada en 1244."},
+ {n_ca:"Gandia", n_es:"Gandía", ent:"Corona d'Aragó", ys:1244, ye:1516, lat:38.9683, lon:-0.1817,
+  note_ca:"Incorporada el 1244.", note_es:"Incorporada en 1244."},
+ {n_ca:"Dénia", n_es:"Denia", ent:"Corona d'Aragó", ys:1244, ye:1516, lat:38.8408, lon:0.1053,
+  note_ca:"Incorporada el 1244.", note_es:"Incorporada en 1244."},
+ {n_ca:"Ontinyent", n_es:"Onteniente", ent:"Corona d'Aragó", ys:1244, ye:1516, lat:38.8214, lon:-0.6089,
+  note_ca:"Incorporada el 1244.", note_es:"Incorporada en 1244."},
+ {n_ca:"Alcoi", n_es:"Alcoy", ent:"Corona d'Aragó", ys:1256, ye:1516, lat:38.6989, lon:-0.4739,
+  note_ca:"Incorporada el 1256, límit meridional inicial del regne.", note_es:"Incorporada en 1256, límite meridional inicial del reino."},
+ {n_ca:"Calp", n_es:"Calpe", ent:"Corona d'Aragó", ys:1240, ye:1516, lat:38.6447, lon:0.0725,
+  note_ca:"Incorporada el 1240.", note_es:"Incorporada en 1240."},
+ {n_ca:"Benidorm", n_es:"Benidorm", ent:"Corona d'Aragó", ys:1245, ye:1516, lat:38.5411, lon:-0.13,
+  note_ca:"Incorporada el 1245.", note_es:"Incorporada en 1245."},
+ {n_ca:"Cofrents", n_es:"Cofrentes", ent:"Corona d'Aragó", ys:1281, ye:1516, lat:39.2167, lon:-1.0667,
+  note_ca:"Incorporada el 1281.", note_es:"Incorporada en 1281."},
+ {n_ca:"Villena", n_es:"Villena", ent:"Corona d'Aragó", ys:1240, ye:1516, lat:38.6339, lon:-0.8656,
+  note_ca:"Zona fronterera disputada, 1240-1244.", note_es:"Zona fronteriza disputada, 1240-1244."},
+ {n_ca:"Elx", n_es:"Elche", ent:"Corona d'Aragó", ys:1289, ye:1516, lat:38.2669, lon:-0.6961,
+  note_ca:"Incorporada el 1289, abans de la campanya general de 1296.", note_es:"Incorporada en 1289, antes de la campaña general de 1296."},
+ {n_ca:"Alacant", n_es:"Alicante", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:38.3452, lon:-0.481,
+  note_ca:"Ocupada l'abril de 1296 durant la campanya de Jaume II a Múrcia.", note_es:"Ocupada en abril de 1296 durante la campaña de Jaime II en Murcia."},
+ {n_ca:"Crevillent", n_es:"Crevillente", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:38.245, lon:-0.8092,
+  note_ca:"Ocupada el 1296.", note_es:"Ocupada en 1296."},
+ {n_ca:"Oriola", n_es:"Orihuela", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:38.0847, lon:-0.9453,
+  note_ca:"Ocupada el 1296; retinguda per la Corona pel Tractat d'Elx (1305).", note_es:"Ocupada en 1296; retenida por la Corona por el Tratado de Elche (1305)."},
+ {n_ca:"Múrcia (ocupació temporal)", n_es:"Murcia (ocupación temporal)", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:37.9922, lon:-1.1307,
+  note_ca:"Ocupada el 1296; retornada a Castella pel Tractat d'Elx (1305).", note_es:"Ocupada en 1296; devuelta a Castilla por el Tratado de Elche (1305)."},
+ {n_ca:"Cartagena (ocupació temporal)", n_es:"Cartagena (ocupación temporal)", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:37.605, lon:-0.9864,
+  note_ca:"Ocupada el 1296; retornada a Castella el 1305.", note_es:"Ocupada en 1296; devuelta a Castilla en 1305."},
+ {n_ca:"Lorca (ocupació temporal)", n_es:"Lorca (ocupación temporal)", ent:"Corona d'Aragó", ys:1300, ye:1516, lat:37.6754, lon:-1.6989,
+  note_ca:"Ocupada el desembre de 1300; retornada a Castella el 1305.", note_es:"Ocupada en diciembre de 1300; devuelta a Castilla en 1305."},
+ {n_ca:"Formentera", n_es:"Formentera", ent:"Corona d'Aragó", ys:1235, ye:1516, lat:38.6989, lon:1.4128,
+  note_ca:"Incorporada juntament amb Eivissa el 1235.", note_es:"Incorporada junto con Ibiza en 1235."},
+,
+ /* --- segon lot de localitats detallades (mateixa font Wikimedia) --- */
+ {n_ca:"Sarroca (fundació del Pallars Sobirà)", n_es:"Sarroca (fundación del Pallars Sobirà)", ent:"Comtats catalans", ys:840, ye:1516, lat:42.4667, lon:1.15,
+  note_ca:"Nucli originari documentat del comtat de Pallars Sobirà.", note_es:"Núcleo originario documentado del condado de Pallars Sobirà."},
+ {n_ca:"Puigcercós (fundació del Pallars Jussà)", n_es:"Puigcercós (fundación del Pallars Jussà)", ent:"Comtats catalans", ys:941, ye:1516, lat:42.2167, lon:0.9167,
+  note_ca:"Nucli originari documentat del comtat de Pallars Jussà.", note_es:"Núcleo originario documentado del condado de Pallars Jussà."},
+ {n_ca:"Organyà", n_es:"Organyà", ent:"Comtats catalans", ys:1024, ye:1516, lat:42.2167, lon:1.3167,
+  note_ca:"Vila del comtat d'Urgell, seu d'un arxiprestat medieval important.", note_es:"Villa del condado de Urgel, sede de un arciprestazgo medieval importante."},
+ {n_ca:"Vallfogona", n_es:"Vallfogona", ent:"Comtats catalans", ys:1038, ye:1516, lat:41.7167, lon:1.0667,
+  note_ca:"Incorporada al Marquesat de Lleida el 1038.", note_es:"Incorporada al Marquesado de Lérida en 1038."},
+ {n_ca:"Valls", n_es:"Valls", ent:"Comtats catalans", ys:1109, ye:1516, lat:41.2861, lon:1.25,
+  note_ca:"Incorporada cap al 1109 a l'àrea del Camp de Tarragona.", note_es:"Incorporada hacia 1109 en el área del Campo de Tarragona."},
+ {n_ca:"Flix", n_es:"Flix", ent:"Comtats catalans", ys:1154, ye:1516, lat:41.2325, lon:0.5528,
+  note_ca:"Incorporada cap al 1154 a la Ribera d'Ebre.", note_es:"Incorporada hacia 1154 en la Ribera de Ebro."},
+ {n_ca:"Valderrobres", n_es:"Valderrobres", ent:"Corona d'Aragó", ys:1169, ye:1516, lat:40.8564, lon:-0.1553,
+  note_ca:"Incorporada al Marquesat de Tortosa el 1169.", note_es:"Incorporada al Marquesado de Tortosa en 1169."},
+ {n_ca:"Banyuls", n_es:"Banyuls", ent:"Comtats catalans", ys:1248, ye:1516, lat:42.4833, lon:3.1333,
+  note_ca:"Enclavament del comtat d'Empúries a la frontera amb el Rosselló.", note_es:"Enclave del condado de Ampurias en la frontera con el Rosellón."},
+ {n_ca:"Cella", n_es:"Cella", ent:"Corona d'Aragó", ys:1170, ye:1516, lat:40.4667, lon:-1.2833,
+  note_ca:"Repoblada definitivament el 1170, després d'un primer intent el 1120.", note_es:"Repoblada definitivamente en 1170, tras un primer intento en 1120."},
+ {n_ca:"Aliaga", n_es:"Aliaga", ent:"Regne d'Aragó", ys:1118, ye:1516, lat:40.85, lon:-0.7167,
+  note_ca:"Incorporada el 1118, ampliada administrativament el 1180.", note_es:"Incorporada en 1118, ampliada administrativamente en 1180."},
+ {n_ca:"Alcalà de la Selva", n_es:"Alcalá de la Selva", ent:"Regne d'Aragó", ys:1118, ye:1516, lat:40.3667, lon:-0.85,
+  note_ca:"Incorporada el 1118.", note_es:"Incorporada en 1118."},
+ {n_ca:"Adzeneta / Adamús", n_es:"Adamuz", ent:"Corona d'Aragó", ys:1210, ye:1516, lat:40.0333, lon:-0.4833,
+  note_ca:"Zona fronterera del Maestrat, ocupada entre 1210 i 1259.", note_es:"Zona fronteriza del Maestrazgo, ocupada entre 1210 y 1259."},
+,
+ /* --- tercer lot: localitats que faltaven en una primera lectura dels screenshots --- */
+ {n_ca:"Jarque", n_es:"Jarque", ent:"Regne d'Aragó", ys:1118, ye:1516, lat:41.0333, lon:-1.4333,
+  note_ca:"Incorporada el 1118.", note_es:"Incorporada en 1118."},
+ {n_ca:"Cutanda", n_es:"Cutanda", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:40.9333, lon:-1.3333,
+  note_ca:"Ocupada el juny de 1120.", note_es:"Ocupada en junio de 1120."},
+ {n_ca:"Torrelacàrcel", n_es:"Torrelacárcel", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:40.5167, lon:-1.25,
+  note_ca:"Incorporada el 1120.", note_es:"Incorporada en 1120."},
+ {n_ca:"Monreal del Camp", n_es:"Monreal del Campo", ent:"Regne d'Aragó", ys:1121, ye:1516, lat:40.7833, lon:-1.3333,
+  note_ca:"Incorporada cap al 1121.", note_es:"Incorporada hacia 1121."},
+ {n_ca:"Montalbà", n_es:"Montalbán", ent:"Corona d'Aragó", ys:1158, ye:1516, lat:40.8333, lon:-0.8,
+  note_ca:"Incorporada cap al 1158.", note_es:"Incorporada hacia 1158."},
+ {n_ca:"Olocau del Rei", n_es:"Olocau del Rey", ent:"Corona d'Aragó", ys:1180, ye:1516, lat:40.5333, lon:-0.2333,
+  note_ca:"Incorporada el 1180.", note_es:"Incorporada en 1180."},
+ {n_ca:"Mosquerola", n_es:"Mosqueruela", ent:"Corona d'Aragó", ys:1181, ye:1516, lat:40.3667, lon:-0.4333,
+  note_ca:"Incorporada el 1181.", note_es:"Incorporada en 1181."},
+ {n_ca:"Alpont", n_es:"Alpuente", ent:"Corona d'Aragó", ys:1236, ye:1516, lat:39.75, lon:-1.0333,
+  note_ca:"Incorporada el 1236.", note_es:"Incorporada en 1236."},
+ {n_ca:"Xelva", n_es:"Chelva", ent:"Corona d'Aragó", ys:1238, ye:1516, lat:39.7397, lon:-0.9967,
+  note_ca:"Ocupada temporalment 1194-1214; incorporació definitiva el 1238.", note_es:"Ocupada temporalmente 1194-1214; incorporación definitiva en 1238."},
+ {n_ca:"Aiora", n_es:"Ayora", ent:"Corona d'Aragó", ys:1281, ye:1516, lat:39.0603, lon:-1.0475,
+  note_ca:"Incorporada el 1281.", note_es:"Incorporada en 1281."},
+ {n_ca:"Elda", n_es:"Elda", ent:"Corona d'Aragó", ys:1305, ye:1516, lat:38.4783, lon:-0.7911,
+  note_ca:"Incorporada el 1305, després del Tractat d'Elx.", note_es:"Incorporada en 1305, tras el Tratado de Elche."},
+ {n_ca:"Torrevella", n_es:"Torrevieja", ent:"Corona d'Aragó", ys:1296, ye:1516, lat:37.9776, lon:-0.6835,
+  note_ca:"Ocupada el 1296 durant la campanya de Múrcia.", note_es:"Ocupada en 1296 durante la campaña de Murcia."},
+,
+ /* --- Catalunya: densificació sol·licitada per l'usuari --- */
+ {n_ca:"Barcelona (conquesta franca)", n_es:"Barcelona (conquista franca)", ent:"Comtats catalans", ys:801, ye:1516, lat:41.3873, lon:2.1686,
+  note_ca:"Presa als musulmans per Guillem de Tolosa sota Lluís el Pietós; origen del comtat.", note_es:"Tomada a los musulmanes por Guillermo de Tolosa bajo Luis el Piadoso; origen del condado."},
+ {n_ca:"Girona (conquesta franca)", n_es:"Girona (conquista franca)", ent:"Comtats catalans", ys:785, ye:1516, lat:41.9794, lon:2.8214,
+  note_ca:"Sotmesa als francs abans que Barcelona; nucli inicial de la Marca Hispànica.", note_es:"Sometida a los francos antes que Barcelona; núcleo inicial de la Marca Hispánica."},
+ {n_ca:"Vic (restauració del bisbat)", n_es:"Vic (restauración del obispado)", ent:"Comtats catalans", ys:886, ye:1516, lat:41.9301, lon:2.2551,
+  note_ca:"Restaurada i repoblada per Guifré el Pilós; nova seu episcopal d'Osona.", note_es:"Restaurada y repoblada por Wifredo el Velloso; nueva sede episcopal de Osona."},
+ {n_ca:"Manresa (repoblament)", n_es:"Manresa (repoblación)", ent:"Comtats catalans", ys:800, ye:1516, lat:41.7286, lon:1.8266,
+  note_ca:"Repoblada a l'entorn de l'any 800 com a plaça de frontera.", note_es:"Repoblada en torno al año 800 como plaza de frontera."},
+ {n_ca:"Cardona (castell)", n_es:"Cardona (castillo)", ent:"Comtats catalans", ys:798, ye:1516, lat:41.9133, lon:1.6803,
+  note_ca:"Castell fronterer aixecat cap al 798; futur ducat.", note_es:"Castillo fronterizo alzado hacia 798; futuro ducado."},
+ {n_ca:"Berga", n_es:"Berga", ent:"Comtats catalans", ys:798, ye:1516, lat:42.105, lon:1.8458,
+  note_ca:"Plaça forta documentada des de 798.", note_es:"Plaza fuerte documentada desde 798."},
+ {n_ca:"Seu d'Urgell (seu episcopal)", n_es:"Seo de Urgel (sede episcopal)", ent:"Comtats catalans", ys:820, ye:1516, lat:42.3583, lon:1.4611,
+  note_ca:"Una de les seus episcopals més antigues dels Pirineus catalans.", note_es:"Una de las sedes episcopales más antiguas de los Pirineos catalanes."},
+ {n_ca:"Ripoll (monestir de Santa Maria)", n_es:"Ripoll (monasterio de Santa María)", ent:"Comtats catalans", ys:879, ye:1516, lat:42.2011, lon:2.1906,
+  note_ca:"Fundat per Guifré el Pilós; bressol de la historiografia catalana medieval.", note_es:"Fundado por Wifredo el Velloso; cuna de la historiografía catalana medieval."},
+ {n_ca:"Besalú (comtat)", n_es:"Besalú (condado)", ent:"Comtats catalans", ys:988, ye:1516, lat:42.1994, lon:2.6994,
+  note_ca:"Capital del comtat homònim fins a la seva absorció el 1111.", note_es:"Capital del condado homónimo hasta su absorción en 1111."},
+ {n_ca:"Perpinyà", n_es:"Perpiñán", ent:"Comtats catalans", ys:927, ye:1516, lat:42.6986, lon:2.8956,
+  note_ca:"Primera menció documental el 927; futura capital del comtat de Rosselló.", note_es:"Primera mención documental en 927; futura capital del condado de Rosellón."},
+ {n_ca:"Puigcerdà (fundació reial)", n_es:"Puigcerdà (fundación real)", ent:"Corona d'Aragó", ys:1177, ye:1516, lat:42.4331, lon:1.928,
+  note_ca:"Vila nova fundada per Alfons I el Cast per consolidar la Cerdanya.", note_es:"Villa nueva fundada por Alfonso I el Casto para consolidar la Cerdaña."},
+ {n_ca:"Vilafranca del Penedès (vila nova)", n_es:"Vilafranca del Penedès (villa nueva)", ent:"Comtats catalans", ys:1150, ye:1516, lat:41.3453, lon:1.6994,
+  note_ca:"Nova vila de frontera al Penedès, cap al 1150.", note_es:"Nueva villa de frontera en el Penedés, hacia 1150."},
+ {n_ca:"Igualada (carta de poblament)", n_es:"Igualada (carta de población)", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:41.5786, lon:1.6175,
+  note_ca:"Rep carta de poblament reial el 1282.", note_es:"Recibe carta de población real en 1282."},
+ {n_ca:"Cervera (vila de mercat)", n_es:"Cervera (villa de mercado)", ent:"Comtats catalans", ys:1026, ye:1516, lat:41.6714, lon:1.2722,
+  note_ca:"Documentada com a vila de mercat des de 1026.", note_es:"Documentada como villa de mercado desde 1026."},
+ {n_ca:"Solsona (vescomtat)", n_es:"Solsona (vizcondado)", ent:"Comtats catalans", ys:950, ye:1516, lat:41.9942, lon:1.5169,
+  note_ca:"Seu d'un vescomtat documentat des de mitjan segle X.", note_es:"Sede de un vizcondado documentado desde mediados del siglo X."},
+ {n_ca:"Terrassa (Ègara)", n_es:"Tarrasa (Ègara)", ent:"Comtats catalans", ys:801, ye:1516, lat:41.5611, lon:2.0089,
+  note_ca:"Antiga seu episcopal visigoda, integrada a la Marca Hispànica des de 801.", note_es:"Antigua sede episcopal visigoda, integrada en la Marca Hispánica desde 801."},
+ {n_ca:"Tortosa (seu episcopal restaurada)", n_es:"Tortosa (sede episcopal restaurada)", ent:"Corona d'Aragó", ys:1148, ye:1516, lat:40.8126, lon:0.5211,
+  note_ca:"Restauració de la seu episcopal immediatament després de la conquesta.", note_es:"Restauración de la sede episcopal inmediatamente después de la conquista."},
+ /* --- Provença: branca cadet de la Casa de Barcelona (1112-1245) --- */
+ {n_ca:"Comtat de Provença (branca catalana)", n_es:"Condado de Provenza (rama catalana)", ent:"Comtats catalans", nominal:1, ys:1112, ye:1245, lat:43.9493, lon:4.8055,
+  note_ca:"Ramon Berenguer III es casa amb Dolça de Provença (1112), incorporant el comtat a la Casa de Barcelona; a la seva mort (1131) en fa hereu un fill segon (branca cadet, no unida a la Corona d'Aragó). La línia s'extingeix el 1245 quan Beatriu de Provença es casa amb Carles d'Anjou, futur rival de la Corona a Sicília.", note_es:"Ramón Berenguer III se casa con Dulce de Provenza (1112), incorporando el condado a la Casa de Barcelona; a su muerte (1131) lo hereda un hijo segundo (rama cadete, no unida a la Corona de Aragón). La línea se extingue en 1245 cuando Beatriz de Provenza se casa con Carlos de Anjou, futuro rival de la Corona en Sicilia."},
+ /* --- Sardenya: judicats i ciutats clau --- */
+ {n_ca:"Giudicat de Càller", n_es:"Judicado de Cagliari", ent:"Corona d'Aragó", ys:1258, ye:1516, lat:39.2238, lon:9.1217,
+  note_ca:"El més antic dels quatre judicats sards; caigut sota influència pisana el 1258, conquerit pels catalanoaragonesos el 1324.", note_es:"El más antiguo de los cuatro judicados sardos; caído bajo influencia pisana en 1258, conquistado por los catalanoaragoneses en 1324."},
+ {n_ca:"Giudicat de Gallura", n_es:"Judicado de Gallura", ent:"Corona d'Aragó", ys:1288, ye:1516, lat:40.9333, lon:9.55,
+  note_ca:"Judicat del nord-est de Sardenya, sota influència pisana des de 1288; incorporat gradualment des de 1324.", note_es:"Judicado del noreste de Cerdeña, bajo influencia pisana desde 1288; incorporado gradualmente desde 1324."},
+ {n_ca:"Giudicat de Logudoro (Torres)", n_es:"Judicado de Logudoro (Torres)", ent:"Corona d'Aragó", ys:1259, ye:1516, lat:40.7259, lon:8.5557,
+  note_ca:"Dividit entre les famílies genoveses Doria i Malaspina des de 1259; incorporació gradual als segles XIV-XV.", note_es:"Dividido entre las familias genovesas Doria y Malaspina desde 1259; incorporación gradual en los siglos XIV-XV."},
+ {n_ca:"Sàsser", n_es:"Sásser", ent:"Corona d'Aragó", ys:1323, ye:1516, lat:40.7259, lon:8.5557,
+  note_ca:"La ciutat es rendeix als catalanoaragonesos el 1323, abans de la campanya principal de 1324.", note_es:"La ciudad se rinde a los catalanoaragoneses en 1323, antes de la campaña principal de 1324."},
+ {n_ca:"L'Alguer (repoblament català)", n_es:"Alguer (repoblación catalana)", ent:"Corona d'Aragó", ys:1354, ye:1516, lat:40.5589, lon:8.3181,
+  note_ca:"Reconquerida als genovesos Doria i repoblada amb colons catalans el 1354; conserva la llengua catalana fins avui.", note_es:"Reconquistada a los genoveses Doria y repoblada con colonos catalanes en 1354; conserva la lengua catalana hasta hoy."},
+ {n_ca:"Oristany (capital d'Arborea, després incorporada)", n_es:"Oristán (capital de Arborea, después incorporada)", ent:"Corona d'Aragó", ys:1420, ye:1516, lat:39.9006, lon:8.5897,
+  note_ca:"Capital del Jutjat d'Arborea fins a la seva definitiva submissió el 1478.", note_es:"Capital del Judicado de Arborea hasta su definitiva sumisión en 1478."},
+ /* --- Sicília: ciutats clau --- */
+ {n_ca:"Catània", n_es:"Catania", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:37.5079, lon:15.083,
+  note_ca:"Ciutat clau de la Sicília oriental, incorporada arran de les Vespres Sicilianes.", note_es:"Ciudad clave de la Sicilia oriental, incorporada tras las Vísperas Sicilianas."},
+ {n_ca:"Siracusa", n_es:"Siracusa", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:37.0755, lon:15.2866,
+  note_ca:"Antiga capital de la Sicília grega, incorporada el 1282.", note_es:"Antigua capital de la Sicilia griega, incorporada en 1282."},
+ {n_ca:"Trapani", n_es:"Trapani", ent:"Corona d'Aragó", ys:1282, ye:1516, lat:38.0176, lon:12.5365,
+  note_ca:"Port occidental clau per al control de l'estret amb el Nord d'Àfrica.", note_es:"Puerto occidental clave para el control del estrecho con el Norte de África."},
+ /* --- Nàpols: ciutats clau --- */
+ {n_ca:"Gaeta", n_es:"Gaeta", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:41.2131, lon:13.5714,
+  note_ca:"Darrer bastió angeví; la seva caiguda el 1442 obre Nàpols a Alfons el Magnànim.", note_es:"Último bastión angevino; su caída en 1442 abre Nápoles a Alfonso el Magnánimo."},
+ {n_ca:"Bari", n_es:"Bari", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:41.1171, lon:16.8719,
+  note_ca:"Incorporada amb la resta del Regne de Nàpols.", note_es:"Incorporada con el resto del Reino de Nápoles."},
+ {n_ca:"Salern", n_es:"Salerno", ent:"Corona d'Aragó", ys:1442, ye:1516, lat:40.6824, lon:14.7681,
+  note_ca:"Incorporada amb la resta del Regne de Nàpols.", note_es:"Incorporada con el resto del Reino de Nápoles."},
+];
+
+const BATALLES = [
+ {n_ca:"Setge de Barbastre", n_es:"Sitio de Barbastro", ys:1064, lat:42.0369, lon:0.1258, kind:"siege", dir:"imposed", out:"uncertain",
+  res_ca:"Croada precursora que pren breument la ciutat, reconquerida per la taifa de Saragossa poc després.", res_es:"Cruzada precursora que toma brevemente la ciudad, reconquistada por la taifa de Zaragoza poco después."},
+ {n_ca:"Campanya de pacificació del Baix Ebre", n_es:"Campaña de pacificación del Bajo Ebro", ys:1150, lat:40.7500, lon:0.5000, kind:"dedication", out:"won",
+  res_ca:"Operacions de consolidació posteriors a la conquesta de Tortosa (1148), documentades al mapa de dominis de Ramon Berenguer IV.", res_es:"Operaciones de consolidación posteriores a la conquista de Tortosa (1148), documentadas en el mapa de dominios de Ramón Berenguer IV."},
+ {n_ca:"Tractat de Corbeil", n_es:"Tratado de Corbeil", ys:1258, lat:48.6081, lon:2.4842, kind:"dedication", out:"won",
+  res_ca:"França renuncia als seus drets sobre Catalunya; Jaume I renuncia a les seves pretensions occitanes (llevat de Montpeller).", res_es:"Francia renuncia a sus derechos sobre Cataluña; Jaime I renuncia a sus pretensiones occitanas (salvo Montpellier)."},
+ {n_ca:"Setge de Tortosa", n_es:"Sitio de Tortosa", ys:1148, lat:40.8126, lon:0.5211, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Victòria de Ramon Berenguer IV amb ajut de croats genovesos.", res_es:"Victoria de Ramón Berenguer IV con ayuda de cruzados genoveses."},
+ {n_ca:"Setge de Lleida", n_es:"Sitio de Lérida", ys:1149, lat:41.6176, lon:0.6200, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Conquesta que completa l'expansió cap al sud del Principat.", res_es:"Conquista que completa la expansión hacia el sur del Principado."},
+ {n_ca:"Batalla de Muret", n_es:"Batalla de Muret", ys:1213, lat:43.4614, lon:1.3214, kind:"battle", out:"lost",
+  res_ca:"Derrota catalanoaragonesa; mort de Pere I.", res_es:"Derrota catalanoaragonesa; muerte de Pedro I."},
+ {n_ca:"Desembarcament de Santa Ponça", n_es:"Desembarco de Santa Ponça", ys:1229, lat:39.5311, lon:2.4661, kind:"battle", out:"won",
+  res_ca:"Primer combat de la host de Jaume I a Mallorca.", res_es:"Primer combate de la hueste de Jaime I en Mallorca."},
+ {n_ca:"Setge de Madina Mayurqa", n_es:"Sitio de Madina Mayurqa", ys:1229, lat:39.5696, lon:2.6502, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Victòria; conquesta de Mallorca.", res_es:"Victoria; conquista de Mallorca."},
+ {n_ca:"Batalla d'Eivissa", n_es:"Batalla de Ibiza", ys:1235, lat:38.9067, lon:1.4206, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Conquesta de l'illa sota patrocini reial.", res_es:"Conquista de la isla bajo patrocinio real."},
+ {n_ca:"Tractat d'Almizra", n_es:"Tratado de Almizra", ys:1244, lat:38.6167, lon:-0.7833, kind:"dedication", out:"won",
+  res_ca:"Divideix les zones de conquesta amb Castella; fixa el límit meridional del futur Regne de València.", res_es:"Divide las zonas de conquista con Castilla; fija el límite meridional del futuro Reino de Valencia."},
+ {n_ca:"Batalla del Puig", n_es:"Batalla del Puig", ys:1237, lat:39.5667, lon:-0.3167, kind:"battle", out:"won",
+  res_ca:"Victòria decisiva que obre el camí cap a la conquesta de València.", res_es:"Victoria decisiva que abre el camino hacia la conquista de Valencia."},
+ {n_ca:"Setge de València", n_es:"Sitio de Valencia", ys:1238, lat:39.4699, lon:-0.3763, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Victòria; capitulació de la ciutat.", res_es:"Victoria; capitulación de la ciudad."},
+ {n_ca:"Revolta d'Al-Azraq", n_es:"Revuelta de Al-Azraq", ys:1247, lat:38.6833, lon:-0.4833, kind:"revolt", out:"uncertain",
+  res_ca:"Revolta mudèjar al sud del Regne de València, sufocada després de diversos anys.", res_es:"Revuelta mudéjar en el sur del Reino de Valencia, sofocada tras varios años."},
+ {n_ca:"Conquesta de Menorca", n_es:"Conquista de Menorca", ys:1287, lat:39.8885, lon:4.2645, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Alfons III conquereix l'illa, darrer territori balear encara musulmà.", res_es:"Alfonso III conquista la isla, último territorio balear todavía musulmán."},
+ {n_ca:"Vespres Sicilianes", n_es:"Vísperas Sicilianas", ys:1282, lat:38.1157, lon:13.3615, kind:"revolt", out:"won",
+  res_ca:"Revolta antiangevina; intervenció de Pere III.", res_es:"Revuelta antiangevina; intervención de Pedro III."},
+ {n_ca:"Setge de Girona (croada francesa)", n_es:"Sitio de Girona (cruzada francesa)", ys:1285, lat:41.9794, lon:2.8214, kind:"siege", dir:"suffered", out:"uncertain",
+  res_ca:"La ciutat cau breument davant l'exèrcit croat de Felip III de França, però l'epidèmia i la desfeta naval obliguen a la retirada francesa.", res_es:"La ciudad cae brevemente ante el ejército cruzado de Felipe III de Francia, pero la epidemia y la derrota naval obligan a la retirada francesa."},
+ {n_ca:"Batalla de les Formigues", n_es:"Batalla de las Fórmigas", ys:1285, lat:41.9167, lon:3.2333, kind:"battle", out:"won",
+  res_ca:"Victòria naval de Roger de Llúria sobre la flota francesa.", res_es:"Victoria naval de Roger de Lauria sobre la flota francesa."},
+ {n_ca:"Batalla del Comte (Sicília)", n_es:"Batalla del Conde (Sicilia)", ys:1287, lat:38.1938, lon:15.5540, kind:"battle", out:"won",
+  res_ca:"Victòria naval catalanoaragonesa a la badia de Nàpols/Messina.", res_es:"Victoria naval catalanoaragonesa en la bahía de Nápoles/Mesina."},
+ {n_ca:"Pau d'Anagni", n_es:"Paz de Anagni", ys:1295, lat:41.4547, lon:13.1522, kind:"dedication", out:"uncertain",
+  res_ca:"Jaume II cedeix formalment Sicília al Papat a canvi de la investidura de Còrsega i Sardenya; el seu germà Frederic manté Sicília per la força.", res_es:"Jaime II cede formalmente Sicilia al Papado a cambio de la investidura de Córcega y Cerdeña; su hermano Federico mantiene Sicilia por la fuerza."},
+ {n_ca:"Batalla de Falconara", n_es:"Batalla de Falconara", ys:1299, lat:37.8, lon:12.5, kind:"battle", out:"won",
+  res_ca:"Roger de Llúria derrota la flota angevina.", res_es:"Roger de Lauria derrota a la flota angevina."},
+ {n_ca:"Batalla del Cefís", n_es:"Batalla del Cefiso", ys:1311, lat:38.35, lon:23.25, kind:"battle", out:"won",
+  res_ca:"Victòria almogàver; conquesta del Ducat d'Atenes.", res_es:"Victoria almogávar; conquista del Ducado de Atenas."},
+ {n_ca:"Assassinat de Roger de Flor", n_es:"Asesinato de Roger de Flor", ys:1305, lat:40.9833, lon:27.5167, kind:"revolt", out:"lost",
+  res_ca:"Emboscada bizantina a Adrianòpolis; desencadena la venjança catalana.", res_es:"Emboscada bizantina en Adrianópolis; desencadena la venganza catalana."},
+ {n_ca:"Setge de Càller (Càlaris)", n_es:"Sitio de Cagliari", ys:1324, lat:39.2238, lon:9.1217, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Conquesta de la principal plaça pisana a Sardenya.", res_es:"Conquista de la principal plaza pisana en Cerdeña."},
+ {n_ca:"Pèrdua de Livàdia i Salona davant els turcs", n_es:"Pérdida de Livadia y Salona ante los turcos", ys:1394, lat:38.4333, lon:22.8833, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Fi del domini català continental a Grècia; només resten Egina i Piada.", res_es:"Fin del dominio catalán continental en Grecia; solo quedan Egina y Piada."},
+ {n_ca:"Batalla de Lucocisterna", n_es:"Batalla de Lucocisterna", ys:1409, lat:39.35, lon:9.0, kind:"battle", out:"won",
+  res_ca:"Coneguda també com a batalla de Sanluri; derrota decisiva del Jutjat d'Arborea.", res_es:"Conocida también como batalla de Sanluri; derrota decisiva del Judicado de Arborea."},
+ {n_ca:"Dedicació de les ciutats sardes (fi de la resistència)", n_es:"Dedicación de las ciudades sardas (fin de la resistencia)", ys:1420, lat:40.7259, lon:8.5557, kind:"dedication", out:"won",
+  res_ca:"Pacificació negociada de bona part de l'illa.", res_es:"Pacificación negociada de buena parte de la isla."},
+ {n_ca:"Batalla de Ponza", n_es:"Batalla de Ponza", ys:1435, lat:40.9, lon:12.95, kind:"battle", out:"lost",
+  res_ca:"Derrota naval; Alfons el Magnànim capturat pels genovesos i lliurat a Milà.", res_es:"Derrota naval; Alfonso el Magnánimo capturado por los genoveses y entregado a Milán."},
+ {n_ca:"Setge de Nàpols", n_es:"Sitio de Nápoles", ys:1442, lat:40.8518, lon:14.2681, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Victòria; Alfons el Magnànim rei de Nàpols.", res_es:"Victoria; Alfonso el Magnánimo rey de Nápoles."},
+ {n_ca:"Revolta remença", n_es:"Revuelta remensa", ys:1462, lat:41.9794, lon:2.8214, kind:"revolt", out:"uncertain",
+  res_ca:"Revolta pagesa a la Catalunya Vella, entrellaçada amb la guerra civil.", res_es:"Revuelta campesina en la Cataluña Vieja, entrelazada con la guerra civil."},
+ {n_ca:"Revolta catalana (guerra civil)", n_es:"Revuelta catalana (guerra civil)", ys:1462, lat:41.3873, lon:2.1686, kind:"revolt", out:"lost",
+  res_ca:"Revolta de la Generalitat contra Joan II; derrota final el 1472.", res_es:"Revuelta de la Generalitat contra Juan II; derrota final en 1472."},
+ {n_ca:"Setge de Girona (guerra civil)", n_es:"Sitio de Girona (guerra civil)", ys:1462, lat:41.9794, lon:2.8214, kind:"siege", dir:"suffered", out:"uncertain",
+  res_ca:"Assetjada per tropes reials durant la guerra civil catalana.", res_es:"Asediada por tropas reales durante la guerra civil catalana."},
+ {n_ca:"Batalla d'Otranto (defensa napolitana)", n_es:"Batalla de Otranto (defensa napolitana)", ys:1480, lat:40.15, lon:18.4833, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Invasió otomana del Regne de Nàpols; ciutat recuperada l'any següent.", res_es:"Invasión otomana del Reino de Nápoles; ciudad recuperada al año siguiente."},
+ {n_ca:"Corpus de Sang", n_es:"Corpus de Sangre", ys:1640, lat:41.3873, lon:2.1686, kind:"revolt", out:"lost",
+  res_ca:"Esclat de la Guerra dels Segadors contra la monarquia hispànica.", res_es:"Estallido de la Guerra de los Segadores contra la monarquía hispánica."},
+ {n_ca:"Batalla de Montjuïc (1641)", n_es:"Batalla de Montjuic (1641)", ys:1641, lat:41.3644, lon:2.1656, kind:"battle", out:"won",
+  res_ca:"Victòria catalanofrancesa sobre l'exèrcit hispànic.", res_es:"Victoria catalanofrancesa sobre el ejército hispánico."},
+ {n_ca:"Setge de Barcelona (1652)", n_es:"Sitio de Barcelona (1652)", ys:1651, lat:41.3873, lon:2.1686, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Rendició de la ciutat; fi de la Guerra dels Segadors.", res_es:"Rendición de la ciudad; fin de la Guerra de los Segadores."},
+ {n_ca:"Presa de Barcelona per l'arxiduc Carles", n_es:"Toma de Barcelona por el archiduque Carlos", ys:1705, lat:41.3873, lon:2.1686, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Catalunya s'alia amb l'arxiduc Carles durant la Guerra de Successió.", res_es:"Cataluña se alía con el archiduque Carlos durante la Guerra de Sucesión."},
+ {n_ca:"Batalla d'Almansa", n_es:"Batalla de Almansa", ys:1707, lat:38.8697, lon:-1.0964, kind:"battle", out:"lost",
+  res_ca:"Derrota decisiva austriacista; Nova Planta per a València i Aragó.", res_es:"Derrota decisiva austracista; Nueva Planta para Valencia y Aragón."},
+ {n_ca:"Setge de Barcelona (1714)", n_es:"Sitio de Barcelona (1714)", ys:1713, lat:41.3873, lon:2.1686, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Caiguda de Barcelona (11 de setembre de 1714); fi de facto de la Corona d'Aragó.", res_es:"Caída de Barcelona (11 de septiembre de 1714); fin de facto de la Corona de Aragón."}
+];
+
+const MONARQUES = [
+ {n_ca:"Guifré el Pilós", n_es:"Wifredo el Velloso", ys:878, ye:897, note_ca:"Comte de Barcelona; figura fundacional.", note_es:"Conde de Barcelona; figura fundacional."},
+ {n_ca:"Borrell II", n_es:"Borrell II", ys:947, ye:993, note_ca:"Trenca el vassallatge amb el rei franc (988).", note_es:"Rompe el vasallaje con el rey franco (988)."},
+ {n_ca:"Ramon Berenguer I el Vell", n_es:"Ramón Berenguer I el Viejo", ys:1035, ye:1076, note_ca:"Promulga els Usatges de Barcelona.", note_es:"Promulga los Usatges de Barcelona."},
+ {n_ca:"Ramiro I d'Aragó", n_es:"Ramiro I de Aragón", ys:1035, ye:1063, note_ca:"Primer rei d'Aragó, fill de Sanç III de Navarra.", note_es:"Primer rey de Aragón, hijo de Sancho III de Navarra."},
+ {n_ca:"Sanç Ramírez", n_es:"Sancho Ramírez", ys:1063, ye:1094, note_ca:"Rei d'Aragó, també rei de Navarra des de 1076.", note_es:"Rey de Aragón, también rey de Navarra desde 1076."},
+ {n_ca:"Pere I d'Aragó", n_es:"Pedro I de Aragón", ys:1094, ye:1104, note_ca:"Conquesta d'Osca (1096).", note_es:"Conquista de Huesca (1096)."},
+ {n_ca:"Alfons I el Bataller", n_es:"Alfonso I el Batallador", ys:1104, ye:1134, note_ca:"Conquesta de Saragossa (1118); gran expansió militar.", note_es:"Conquista de Zaragoza (1118); gran expansión militar."},
+ {n_ca:"Ramiro II el Monjo", n_es:"Ramiro II el Monje", ys:1134, ye:1157, note_ca:"Casa la seva filla Peronella amb Ramon Berenguer IV (1137).", note_es:"Casa a su hija Petronila con Ramón Berenguer IV (1137)."},
+ {n_ca:"Ramon Berenguer III", n_es:"Ramón Berenguer III", ys:1082, ye:1131, note_ca:"Comte de Barcelona, pare de Ramon Berenguer IV; expansió occitana.", note_es:"Conde de Barcelona, padre de Ramón Berenguer IV; expansión occitana."},
+ {n_ca:"Ramon Berenguer IV", n_es:"Ramón Berenguer IV", ys:1131, ye:1162, note_ca:"Unió dinàstica amb Aragó (1137, matrimoni celebrat el 1150); conquesta de Tortosa i Lleida.", note_es:"Unión dinástica con Aragón (1137, matrimonio celebrado en 1150); conquista de Tortosa y Lérida."},
+ {n_ca:"Peronella d'Aragó", n_es:"Petronila de Aragón", ys:1137, ye:1164, note_ca:"Reina d'Aragó titular; casada amb Ramon Berenguer IV el 1150.", note_es:"Reina de Aragón titular; casada con Ramón Berenguer IV en 1150."},
+ {n_ca:"Alfons I el Cast", n_es:"Alfonso II el Casto", ys:1164, ye:1196, note_ca:"Primer rei d'Aragó i comte de Barcelona simultàniament, des de la seva majoria d'edat el 1164.", note_es:"Primer rey de Aragón y conde de Barcelona simultáneamente, desde su mayoría de edad en 1164."},
+ {n_ca:"Pere I el Catòlic", n_es:"Pedro II el Católico", ys:1196, ye:1213, note_ca:"Mort a la batalla de Muret.", note_es:"Muerto en la batalla de Muret."},
+ {n_ca:"Jaume I el Conqueridor", n_es:"Jaime I el Conquistador", ys:1213, ye:1276, note_ca:"Conquesta de Mallorca i València.", note_es:"Conquista de Mallorca y Valencia."},
+ {n_ca:"Pere III el Gran", n_es:"Pedro III el Grande", ys:1276, ye:1285, note_ca:"Vespres Sicilianes; conquesta de Sicília.", note_es:"Vísperas Sicilianas; conquista de Sicilia."},
+ {n_ca:"Alfons III el Liberal", n_es:"Alfonso III el Liberal", ys:1285, ye:1291, note_ca:"Conquesta de Menorca (1287).", note_es:"Conquista de Menorca (1287)."},
+ {n_ca:"Jaume II el Just", n_es:"Jaime II el Justo", ys:1291, ye:1327, note_ca:"Conquesta de Sardenya; investidura papal del regne.", note_es:"Conquista de Cerdeña; investidura papal del reino."},
+ {n_ca:"Alfons IV el Benigne", n_es:"Alfonso IV el Benigno", ys:1327, ye:1336, note_ca:"Consolida la presència a Sardenya.", note_es:"Consolida la presencia en Cerdeña."},
+ {n_ca:"Pere III el Cerimoniós", n_es:"Pedro IV el Ceremonioso", ys:1336, ye:1387, note_ca:"Reincorpora Mallorca (1349); centralitza l'administració.", note_es:"Reincorpora Mallorca (1349); centraliza la administración."},
+ {n_ca:"Joan I l'Amador de la Gentilesa", n_es:"Juan I el Cazador", ys:1387, ye:1396, note_ca:"Mecenatge cultural; problemes successoris.", note_es:"Mecenazgo cultural; problemas sucesorios."},
+ {n_ca:"Martí l'Humà", n_es:"Martín el Humano", ys:1396, ye:1410, note_ca:"Darrer rei de la dinastia de Barcelona.", note_es:"Último rey de la dinastía de Barcelona."},
+ {n_ca:"Ferran I d'Antequera", n_es:"Fernando I de Antequera", ys:1412, ye:1416, note_ca:"Compromís de Casp; primer Trastàmara.", note_es:"Compromiso de Caspe; primer Trastámara."},
+ {n_ca:"Alfons IV el Magnànim", n_es:"Alfonso V el Magnánimo", ys:1416, ye:1458, note_ca:"Conquesta de Nàpols (1442); cort humanista a Nàpols.", note_es:"Conquista de Nápoles (1442); corte humanista en Nápoles."},
+ {n_ca:"Joan II", n_es:"Juan II", ys:1458, ye:1479, note_ca:"Guerra civil catalana (1462-1472).", note_es:"Guerra civil catalana (1462-1472)."},
+ {n_ca:"Ferran II el Catòlic", n_es:"Fernando II el Católico", ys:1479, ye:1516, note_ca:"Unió dinàstica amb Castella; reincorporació de Nàpols (1503).", note_es:"Unión dinástica con Castilla; reincorporación de Nápoles (1503)."}
+];
+
+const GUERRES = [
+ {n_ca:"Croada Albigesa (intervenció occitana)", n_es:"Cruzada Albigense (intervención occitana)", ys:1209, ye:1213, out:"lost",
+  res_ca:"Derrota; mort de Pere I a Muret.", res_es:"Derrota; muerte de Pedro I en Muret."},
+ {n_ca:"Conquesta de Mallorca", n_es:"Conquista de Mallorca", ys:1229, ye:1231, out:"won",
+  res_ca:"Victòria; annexió de l'illa.", res_es:"Victoria; anexión de la isla."},
+ {n_ca:"Conquesta del Regne de València", n_es:"Conquista del Reino de Valencia", ys:1232, ye:1245, out:"won",
+  res_ca:"Victòria; creació del nou regne dins la Corona.", res_es:"Victoria; creación del nuevo reino dentro de la Corona."},
+ {n_ca:"Guerra de les Vespres Sicilianes", n_es:"Guerra de las Vísperas Sicilianas", ys:1282, ye:1302, out:"won",
+  res_ca:"Pau de Caltabellotta: Sicília per a la Corona.", res_es:"Paz de Caltabellotta: Sicilia para la Corona."},
+ {n_ca:"Expedició de la Companyia Catalana a Orient", n_es:"Expedición de la Compañía Catalana en Oriente", ys:1303, ye:1311, out:"won",
+  res_ca:"Els almogàvers conquereixen Atenes després de servir Bizanci.", res_es:"Los almogávares conquistan Atenas tras servir a Bizancio."},
+ {n_ca:"Guerres sardocatalanes", n_es:"Guerras sardo-catalanas", ys:1324, ye:1420, out:"uncertain",
+  res_ca:"Conquesta llarga i costosa contra el Jutjat d'Arborea.", res_es:"Conquista larga y costosa contra el Judicado de Arborea."},
+ {n_ca:"Guerra dels dos Peres (amb Castella)", n_es:"Guerra de los dos Pedros (con Castilla)", ys:1356, ye:1369, out:"uncertain",
+  res_ca:"Conflicte llarg sense canvis territorials decisius.", res_es:"Conflicto largo sin cambios territoriales decisivos."},
+ {n_ca:"Conquesta de Nàpols per Alfons el Magnànim", n_es:"Conquista de Nápoles por Alfonso el Magnánimo", ys:1435, ye:1442, out:"won",
+  res_ca:"Victòria; Alfons rei de Nàpols.", res_es:"Victoria; Alfonso rey de Nápoles."},
+ {n_ca:"Guerra civil catalana", n_es:"Guerra civil catalana", ys:1462, ye:1472, out:"won",
+  res_ca:"Victòria reial; Catalunya sotmesa a Joan II.", res_es:"Victoria real; Cataluña sometida a Juan II."},
+ {n_ca:"Guerra dels Segadors", n_es:"Guerra de los Segadores", ys:1640, ye:1652, out:"lost",
+  res_ca:"Revolta catalana contra la monarquia hispànica, amb aliança francesa; derrota final el 1652.", res_es:"Revuelta catalana contra la monarquía hispánica, con alianza francesa; derrota final en 1652."},
+ {n_ca:"Guerra de Successió Espanyola (front català)", n_es:"Guerra de Sucesión Española (frente catalán)", ys:1701, ye:1714, out:"lost",
+  res_ca:"Derrota; caiguda de Barcelona (1714); Decrets de Nova Planta.", res_es:"Derrota; caída de Barcelona (1714); Decretos de Nueva Planta."}
+];
+
+const PERSONATGES = [
+ {n_ca:"Guifré el Pilós", n_es:"Wifredo el Velloso", ys:840, ye:897, rol_ca:"Comte de Barcelona", rol_es:"Conde de Barcelona",
+  contrib_ca:"Figura fundacional del llinatge català.", contrib_es:"Figura fundacional del linaje catalán."},
+ {n_ca:"Jaume I el Conqueridor", n_es:"Jaime I el Conquistador", ys:1208, ye:1276, rol_ca:"Rei", rol_es:"Rey",
+  contrib_ca:"Conquesta de Mallorca i València; Llibre dels Fets.", contrib_es:"Conquista de Mallorca y Valencia; Llibre dels Fets."},
+ {n_ca:"Ramon Muntaner", n_es:"Ramon Muntaner", ys:1265, ye:1336, rol_ca:"Militar i cronista", rol_es:"Militar y cronista",
+  contrib_ca:"Crònica de l'expedició de la Companyia Catalana.", contrib_es:"Crónica de la expedición de la Compañía Catalana."},
+ {n_ca:"Roger de Flor", n_es:"Roger de Flor", ys:1267, ye:1305, rol_ca:"Cabdill militar", rol_es:"Caudillo militar",
+  contrib_ca:"Liderà la Companyia Catalana d'Orient.", contrib_es:"Lideró la Compañía Catalana de Oriente."},
+ {n_ca:"Alfons el Magnànim", n_es:"Alfonso el Magnánimo", ys:1396, ye:1458, rol_ca:"Rei i mecenes", rol_es:"Rey y mecenas",
+  contrib_ca:"Conquesta de Nàpols; mecenatge humanista.", contrib_es:"Conquista de Nápoles; mecenazgo humanista."},
+ {n_ca:"Rafael Casanova", n_es:"Rafael Casanova", ys:1660, ye:1743, rol_ca:"Conseller en Cap de Barcelona", rol_es:"Conseller en Cap de Barcelona",
+  contrib_ca:"Defensa de Barcelona durant el setge de 1714.", contrib_es:"Defensa de Barcelona durante el sitio de 1714."},
+ {n_ca:"Roger de Llúria", n_es:"Roger de Lauria", ys:1245, ye:1305, rol_ca:"Almirall", rol_es:"Almirante",
+  contrib_ca:"Sèrie de victòries navals decisives durant la guerra de les Vespres.", contrib_es:"Serie de victorias navales decisivas durante la guerra de las Vísperas."},
+ {n_ca:"Ramon Berenguer IV", n_es:"Ramón Berenguer IV", ys:1113, ye:1162, rol_ca:"Comte-príncep", rol_es:"Conde-príncipe",
+  contrib_ca:"Unió dinàstica amb Aragó; conquesta de Tortosa i Lleida.", contrib_es:"Unión dinástica con Aragón; conquista de Tortosa y Lérida."},
+ {n_ca:"Ramon Llull", n_es:"Ramon Llull", ys:1232, ye:1316, rol_ca:"Filòsof i missioner", rol_es:"Filósofo y misionero",
+  contrib_ca:"Figura intel·lectual major del període, nascut a Mallorca poc després de la conquesta.", contrib_es:"Figura intelectual mayor del período, nacido en Mallorca poco después de la conquista."},
+ {n_ca:"Bernat Desclot", n_es:"Bernat Desclot", ys:1250, ye:1288, rol_ca:"Cronista", rol_es:"Cronista",
+  contrib_ca:"Crònica del regnat de Pere III i les Vespres Sicilianes.", contrib_es:"Crónica del reinado de Pedro III y las Vísperas Sicilianas."},
+ {n_ca:"Pau Claris", n_es:"Pau Claris", ys:1586, ye:1641, rol_ca:"President de la Generalitat", rol_es:"Presidente de la Generalitat",
+  contrib_ca:"Liderà l'esclat de la Guerra dels Segadors.", contrib_es:"Lideró el estallido de la Guerra de los Segadores."}
+];
+
+const CRONOLOGIA = [
+ {ys:801, ca:"Carlemany crea la Marca Hispànica.", es:"Carlomagno crea la Marca Hispánica."},
+ {ys:878, ca:"Guifré el Pilós reuneix Barcelona, Girona i Osona.", es:"Wifredo el Velloso reúne Barcelona, Girona y Osona."},
+ {ys:988, ca:"Borrell II trenca el vassallatge amb el rei franc.", es:"Borrell II rompe el vasallaje con el rey franco."},
+ {ys:1035, ca:"Neix el Regne d'Aragó sota Ramir I.", es:"Nace el Reino de Aragón bajo Ramiro I."},
+ {ys:1137, ca:"Unió dinàstica: naixement de la Corona d'Aragó.", es:"Unión dinástica: nacimiento de la Corona de Aragón."},
+ {ys:1148, ca:"Conquesta de Tortosa.", es:"Conquista de Tortosa."},
+ {ys:1149, ca:"Conquesta de Lleida.", es:"Conquista de Lérida."},
+ {ys:1213, ca:"Batalla de Muret; mort de Pere I.", es:"Batalla de Muret; muerte de Pedro I."},
+ {ys:1229, ca:"Jaume I inicia la conquesta de Mallorca.", es:"Jaime I inicia la conquista de Mallorca."},
+ {ys:1235, ca:"Conquesta d'Eivissa.", es:"Conquista de Ibiza."},
+ {ys:1238, ca:"Jaume I conquereix València.", es:"Jaime I conquista Valencia."},
+ {ys:1244, ca:"Tractat d'Almizra: repartiment amb Castella.", es:"Tratado de Almizra: reparto con Castilla."},
+ {ys:1258, ca:"Tractat de Corbeil: fi de les pretensions occitanes i franceses.", es:"Tratado de Corbeil: fin de las pretensiones occitanas y francesas."},
+ {ys:1276, ca:"Mort de Jaume I; separació temporal del Regne de Mallorca.", es:"Muerte de Jaime I; separación temporal del Reino de Mallorca."},
+ {ys:1282, ca:"Vespres Sicilianes; conquesta de Sicília.", es:"Vísperas Sicilianas; conquista de Sicilia."},
+ {ys:1285, ca:"Croada francesa contra Catalunya: caiguda i alliberament de Girona.", es:"Cruzada francesa contra Cataluña: caída y liberación de Girona."},
+ {ys:1287, ca:"Conquesta de Menorca.", es:"Conquista de Menorca."},
+ {ys:1291, ca:"Acord de Monteagudo amb Castella: repartiment d'influència al Magrib.", es:"Acuerdo de Monteagudo con Castilla: reparto de influencia en el Magreb."},
+ {ys:1295, ca:"Pau d'Anagni: Jaume II cedeix Sicília, rep la investidura de Còrsega i Sardenya.", es:"Paz de Anagni: Jaime II cede Sicilia, recibe la investidura de Córcega y Cerdeña."},
+ {ys:1305, ca:"Tractat d'Elx: Múrcia passa a Castella (llevat d'Oriola i Alacant).", es:"Tratado de Elche: Murcia pasa a Castilla (salvo Orihuela y Alicante)."},
+ {ys:1311, ca:"La Companyia Catalana conquereix Atenes.", es:"La Compañía Catalana conquista Atenas."},
+ {ys:1324, ca:"Inici de la conquesta de Sardenya.", es:"Inicio de la conquista de Cerdeña."},
+ {ys:1349, ca:"Reincorporació del Regne de Mallorca.", es:"Reincorporación del Reino de Mallorca."},
+ {ys:1355, ca:"Sardenya rep Corts pròpies de model català.", es:"Cerdeña recibe Cortes propias de modelo catalán."},
+ {ys:1363, ca:"Creació de les diputacions permanents d'Aragó, Catalunya i València.", es:"Creación de las diputaciones permanentes de Aragón, Cataluña y Valencia."},
+ {ys:1380, ca:"Pere III assumeix la sobirania directa d'Atenes i Neopàtria.", es:"Pedro III asume la soberanía directa de Atenas y Neopatria."},
+ {ys:1388, ca:"Pèrdua del Ducat d'Atenes.", es:"Pérdida del Ducado de Atenas."},
+ {ys:1390, ca:"Pèrdua del Ducat de Neopàtria.", es:"Pérdida del Ducado de Neopatria."},
+ {ys:1394, ca:"Pèrdua de Livàdia i el comtat de Salona davant els turcs.", es:"Pérdida de Livadia y el condado de Salona ante los turcos."},
+ {ys:1409, ca:"Mort de Martí el Jove; reunificació de facto de Sicília amb la Corona.", es:"Muerte de Martín el Joven; reunificación de facto de Sicilia con la Corona."},
+ {ys:1412, ca:"Compromís de Casp: dinastia Trastàmara.", es:"Compromiso de Caspe: dinastía Trastámara."},
+ {ys:1418, ca:"Pèrdua de l'illa d'Egina.", es:"Pérdida de la isla de Egina."},
+ {ys:1420, ca:"Fi de la resistència d'Arborea a Sardenya.", es:"Fin de la resistencia de Arborea en Cerdeña."},
+ {ys:1442, ca:"Alfons el Magnànim conquereix Nàpols.", es:"Alfonso el Magnánimo conquista Nápoles."},
+ {ys:1460, ca:"Pèrdua de l'illa de Piada, darrer territori grec.", es:"Pérdida de la isla de Piada, último territorio griego."},
+ {ys:1462, ca:"Esclat de la guerra civil catalana.", es:"Estallido de la guerra civil catalana."},
+ {ys:1479, ca:"Unió dinàstica amb Castella (Reis Catòlics).", es:"Unión dinástica con Castilla (Reyes Católicos)."},
+ {ys:1503, ca:"Reincorporació definitiva de Nàpols.", es:"Reincorporación definitiva de Nápoles."},
+ {ys:1516, ca:"Mort de Ferran II: els territoris de la Corona passen a la Monarquia Hispànica sota Carles I.", es:"Muerte de Fernando II: los territorios de la Corona pasan a la Monarquía Hispánica bajo Carlos I."},
+ {ys:1522, ca:"Malta cedida als Cavallers Hospitalers.", es:"Malta cedida a los Caballeros Hospitalarios."},
+ {ys:1640, ca:"Corpus de Sang: esclat de la Guerra dels Segadors.", es:"Corpus de Sangre: estallido de la Guerra de los Segadores."},
+ {ys:1652, ca:"Rendició de Barcelona; fi de la Guerra dels Segadors.", es:"Rendición de Barcelona; fin de la Guerra de los Segadores."},
+ {ys:1659, ca:"Tractat dels Pirineus: cessió de Rosselló i part de la Cerdanya a França.", es:"Tratado de los Pirineos: cesión de Rosellón y parte de la Cerdaña a Francia."},
+ {ys:1707, ca:"Nova Planta per a València i Aragó.", es:"Nueva Planta para Valencia y Aragón."},
+ {ys:1713, ca:"Menorca cedida al Regne Unit (Tractat d'Utrecht).", es:"Menorca cedida al Reino Unido (Tratado de Utrecht)."},
+ {ys:1714, ca:"Caiguda de Barcelona.", es:"Caída de Barcelona."},
+ {ys:1716, ca:"Decret de Nova Planta de Catalunya: fi de les institucions pròpies.", es:"Decreto de Nueva Planta de Cataluña: fin de las instituciones propias."}
+];
+
+/* ===================== ESTAT ===================== */
+let LANG = 'ca';
+const YMIN = 800, YMAX = 1720;
+let currentYear = 1137;
+let activeEntities = new Set(Object.keys(ENTITATS));
+
+const STR = {
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.8",
+      visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)",
+      fullscreen:"Pantalla completa", exitFullscreen:"Sortir",
+      entitats:"Entitats sobiranes (territoris)", batMap:"Batalles i esdeveniments al mapa",
+      bWon:"Batalles guanyades", bUnc:"Batalles d'esdeveniment incert", bLost:"Batalles perdudes",
+      sImp:"Setges imposats", sSuf:"Setges patits", revolt:"Revoltes", ded:"Dedicacions / adhesions",
+      fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
+      guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
+      legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
+      disclaimer:"Projecte de recerca personal i no oficial. Dades en fase inicial d'elaboració (esborrany v0.8): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.8",
+      visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)",
+      fullscreen:"Pantalla completa", exitFullscreen:"Salir",
+      entitats:"Entidades soberanas (territorios)", batMap:"Batallas y eventos en el mapa",
+      bWon:"Batallas ganadas", bUnc:"Batallas de resultado incierto", bLost:"Batallas perdidas",
+      sImp:"Sitios impuestos", sSuf:"Sitios sufridos", revolt:"Revueltas", ded:"Dedicaciones / adhesiones",
+      fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
+      guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
+      legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
+      disclaimer:"Proyecto de investigación personal y no oficial. Datos en fase inicial de elaboración (borrador v0.8): requieren verificación y ampliación."}
+};
+
+function setLang(l){
+  LANG = l;
+  document.getElementById('btnCA').classList.toggle('active', l==='ca');
+  document.getElementById('btnES').classList.toggle('active', l==='es');
+  refreshAllTexts();
+  renderEntityChecks();
+  renderLegend();
+  renderStripLists();
+  updateMap();
+}
+
+function refreshAllTexts(){
+  const s = STR[LANG];
+  document.getElementById('titleTxt').textContent = s.title;
+  document.getElementById('subTxt').textContent = s.sub;
+  document.getElementById('lblVisual').textContent = s.visual;
+  document.getElementById('lblAllTime').textContent = s.allTime;
+  document.getElementById('lblAllTimeSub').textContent = s.allTimeSub;
+  document.getElementById('lblFullscreen').textContent = s.fullscreen;
+  document.getElementById('lblExitFullscreen').textContent = s.exitFullscreen;
+  document.getElementById('lblEntitats').textContent = s.entitats;
+  document.getElementById('lblBatMap').textContent = s.batMap;
+  document.getElementById('lblBWon').textContent = s.bWon;
+  document.getElementById('lblBUnc').textContent = s.bUnc;
+  document.getElementById('lblBLost').textContent = s.bLost;
+  document.getElementById('lblSImp').textContent = s.sImp;
+  document.getElementById('lblSSuf').textContent = s.sSuf;
+  document.getElementById('lblRevolt').textContent = s.revolt;
+  document.getElementById('lblDed').textContent = s.ded;
+  document.getElementById('lblFasce').textContent = s.fasce;
+  document.getElementById('lblChron').textContent = s.chron;
+  document.getElementById('lblMonarquesChk').textContent = s.monarquesChk;
+  document.getElementById('lblGuerresChk').textContent = s.guerresChk;
+  document.getElementById('lblPersonatgesChk').textContent = s.personatgesChk;
+  document.getElementById('lblBatallesChk').textContent = s.batallesChk;
+  document.getElementById('lblLegendBtn').textContent = s.legendBtn;
+  document.getElementById('disclaimerTxt').textContent = s.disclaimer;
+  document.getElementById('chronPanelTitle').textContent = s.chron;
+  document.getElementById('monarquesPanelTitle').textContent = s.monarquesChk;
+  document.getElementById('guerresPanelTitle').textContent = s.guerresChk;
+  document.getElementById('personatgesPanelTitle').textContent = s.personatgesChk;
+  document.getElementById('batallesPanelTitle').textContent = s.batallesChk;
+}
+
+function renderEntityChecks(){
+  const box = document.getElementById('entityChecks');
+  box.innerHTML = '';
+  Object.entries(ENTITATS).forEach(([key, ent])=>{
+    const label = LANG==='ca' ? ent.label_ca : ent.label_es;
+    const row = document.createElement('label');
+    row.className = 'cat-row';
+    row.innerHTML = `<input type="checkbox" class="entcheck" data-ent="${key}" ${activeEntities.has(key)?'checked':''}>
+      <span class="swatch" style="background:${ent.color}"></span>${label}`;
+    row.querySelector('input').addEventListener('change', (e)=>{
+      if(e.target.checked) activeEntities.add(key); else activeEntities.delete(key);
+      updateMap();
+    });
+    box.appendChild(row);
+  });
+}
+
+function renderLegend(){
+  const s = STR[LANG];
+  const p = document.getElementById('legendPanel');
+  let html = `<h3>${s.legendEntitats}</h3>`;
+  Object.values(ENTITATS).forEach(ent=>{
+    const label = LANG==='ca' ? ent.label_ca : ent.label_es;
+    html += `<div class="lg-row"><span class="lg-dot" style="background:${ent.color}"></span>${label}</div>`;
+  });
+  html += `<h3>${s.legendBatalles}</h3>`;
+  const items = [
+    ['⚔','#c62828', LANG==='ca'?'Batalla guanyada':'Batalla ganada'],
+    ['⚔','#c49619', LANG==='ca'?'Batalla incerta':'Batalla incierta'],
+    ['⚔','#343a48', LANG==='ca'?'Batalla perduda':'Batalla perdida'],
+    ['♖','#ff9628', LANG==='ca'?'Setge imposat':'Sitio impuesto'],
+    ['♖','#ff9628', LANG==='ca'?'Setge patit':'Sitio sufrido'],
+    ['⚑','#9b5fc0', LANG==='ca'?'Revolta':'Revuelta'],
+    ['⚖','#5a9b5f', LANG==='ca'?'Dedicació':'Dedicación']
+  ];
+  items.forEach(([sym,color,label])=>{
+    html += `<div class="lg-row"><span class="lg-sym" style="color:${color}">${sym}</span>${label}</div>`;
+  });
+  p.innerHTML = html;
+}
+
+/* ===================== MAPA ===================== */
+const map = L.map('map', {zoomSnap:0.5}).setView([40.2, 5.5], 5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18
+}).addTo(map);
+
+let territoriLayer = L.layerGroup().addTo(map);
+let battleLayer = L.layerGroup().addTo(map);
+
+const SYMS = {battle:'⚔', siege:'♖', revolt:'⚑', dedication:'⚖'};
+function markerClassFor(b){
+  if(b.kind==='siege') return b.dir==='imposed' ? 'm-siege-imposed' : 'm-siege-suffered';
+  if(b.kind==='revolt') return 'm-revolt';
+  if(b.kind==='dedication') return 'm-dedication';
+  return 'm-'+b.out;
+}
+function battleVisible(b){
+  if(b.kind==='battle'){
+    if(b.out==='won') return document.getElementById('battlesWonToggle').checked;
+    if(b.out==='uncertain') return document.getElementById('battlesUncertainToggle').checked;
+    if(b.out==='lost') return document.getElementById('battlesLostToggle').checked;
+  }
+  if(b.kind==='siege'){
+    if(b.dir==='imposed') return document.getElementById('siegeImposedToggle').checked;
+    return document.getElementById('siegeSufferedToggle').checked;
+  }
+  if(b.kind==='revolt') return document.getElementById('revoltToggle').checked;
+  if(b.kind==='dedication') return document.getElementById('dedicationToggle').checked;
+  return false;
+}
+
+const allTimeToggle = document.getElementById('allTimeToggle');
+const BATTLE_WINDOW = 3; // anys de "persistència visual" d'un esdeveniment puntual al voltant del seu any exacte
+
+function updateMap(){
+  const allTime = allTimeToggle.checked;
+  territoriLayer.clearLayers();
+  TERRITORIS.forEach(t=>{
+    if(!allTime && (currentYear < t.ys || currentYear > t.ye)) return;
+    if(!activeEntities.has(t.ent)) return;
+    const ent = ENTITATS[t.ent];
+    const isNominal = !!t.nominal;
+    const marker = L.circleMarker([t.lat, t.lon], {
+      radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
+      fillOpacity: isNominal ? 0.35 : 0.85, dashArray: isNominal ? '3,3' : null
+    });
+    const name = LANG==='ca' ? t.n_ca : t.n_es;
+    const note = LANG==='ca' ? t.note_ca : t.note_es;
+    const entLabel = LANG==='ca' ? ent.label_ca : ent.label_es;
+    const nominalTag = isNominal ? (LANG==='ca' ? '<br><i>(sobirania nominal / pretesa, no dominada efectivament)</i>' : '<br><i>(soberanía nominal / pretendida, no dominada efectivamente)</i>') : '';
+    marker.bindPopup(`<div class="popup-${LANG}"><b>${name}</b><br>${entLabel} (${t.ys}\u2013${t.ye})<br>${note}${nominalTag}</div>`);
+    marker.addTo(territoriLayer);
+  });
+
+  battleLayer.clearLayers();
+  BATALLES.forEach(b=>{
+    if(!battleVisible(b)) return;
+    if(!allTime){
+      const dist = currentYear - b.ys;
+      if(dist < 0 || dist > BATTLE_WINDOW) return; // apareix a l'any exacte i s'esvaeix pocs anys després
+    }
+    const icon = L.divIcon({className:'', html:`<div class="divmark pulse ${markerClassFor(b)}">${SYMS[b.kind]}</div>`, iconSize:[26,26]});
+    const marker = L.marker([b.lat, b.lon], {icon});
+    const name = LANG==='ca' ? b.n_ca : b.n_es;
+    const res = LANG==='ca' ? b.res_ca : b.res_es;
+    marker.bindPopup(`<div class="popup-${LANG}"><b>${name}</b> (${b.ys})<br>${res}</div>`);
+    marker.addTo(battleLayer);
+  });
+}
+
+['battlesWonToggle','battlesUncertainToggle','battlesLostToggle','siegeImposedToggle','siegeSufferedToggle','revoltToggle','dedicationToggle','allTimeToggle']
+  .forEach(id=> document.getElementById(id).addEventListener('change', updateMap));
+
+/* ===================== TIMELINE (slider, play, nudge) ===================== */
+const slider = document.getElementById('yearSlider');
+const yearInput = document.getElementById('yearInput');
+const yearReadout = document.getElementById('yearReadout');
+
+function goToYear(y){
+  y = Math.min(YMAX, Math.max(YMIN, y));
+  currentYear = y;
+  slider.value = y; yearInput.value = y; yearReadout.textContent = y;
+  updateMap();
+}
+slider.addEventListener('input', ()=> goToYear(parseInt(slider.value,10)));
+yearInput.addEventListener('change', ()=> goToYear(parseInt(yearInput.value,10)||currentYear));
+
+function nudgeYear(delta){
+  if(playing){ playing=false; document.getElementById('playBtn').textContent='▶'; clearInterval(timer); }
+  goToYear(currentYear + delta);
+}
+document.getElementById('nudgeBack10').addEventListener('click', ()=> nudgeYear(-10));
+document.getElementById('nudgeBack1').addEventListener('click', ()=> nudgeYear(-1));
+document.getElementById('nudgeFwd1').addEventListener('click', ()=> nudgeYear(1));
+document.getElementById('nudgeFwd10').addEventListener('click', ()=> nudgeYear(10));
+
+let playing=false, timer=null;
+const speedSelect = document.getElementById('speedSelect');
+function currentIntervalMs(){ return 160 / parseFloat(speedSelect.value); }
+function startTimer(){
+  clearInterval(timer);
+  timer = setInterval(()=>{
+    let y = currentYear + 1;
+    if(y > YMAX){ y = YMAX; playing=false; document.getElementById('playBtn').textContent='▶'; clearInterval(timer); }
+    goToYear(y);
+  }, currentIntervalMs());
+}
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  playing = !playing;
+  document.getElementById('playBtn').textContent = playing ? '❚❚' : '▶';
+  if(playing){
+    if(allTimeToggle.checked){ allTimeToggle.checked = false; } // no té sentit animar amb "totes les èpoques" actiu
+    if(currentYear >= YMAX) goToYear(YMIN);
+    startTimer();
+  } else { clearInterval(timer); }
+  updateMap();
+});
+speedSelect.addEventListener('change', ()=>{ if(playing) startTimer(); });
+
+/* ===================== LEGENDA (toggle) ===================== */
+const legendBtn = document.getElementById('legendToggleBtn');
+const legendPanel = document.getElementById('legendPanel');
+legendBtn.addEventListener('click', ()=>{
+  const open = legendPanel.classList.toggle('open');
+  legendBtn.classList.toggle('active', open);
+});
+
+/* ===================== SIDE-STRIP (cronologie sincronizzate, INTEGRATE nella griglia) ===================== */
+const STRIPS = [
+  {key:'chron', toggle:'chronToggle', panel:'chronPanel'},
+  {key:'monarques', toggle:'monarquesToggle', panel:'monarquesPanel'},
+  {key:'guerres', toggle:'guerresToggle', panel:'guerresPanel'},
+  {key:'personatges', toggle:'personatgesToggle', panel:'personatgesPanel'},
+  {key:'batalleschron', toggle:'batallesChronToggle', panel:'batallesChronPanel'}
+];
+const appEl = document.getElementById('app');
+
+function updateLayout(){
+  const active = STRIPS.filter(s=> document.getElementById(s.toggle).checked);
+  STRIPS.forEach(s=>{
+    const panelEl = document.getElementById(s.panel);
+    const isOpen = document.getElementById(s.toggle).checked;
+    panelEl.classList.toggle('open', isOpen);
+    panelEl.style.gridArea = s.key;
+  });
+  const isMobile = window.matchMedia('(max-width:900px)').matches;
+  if(isMobile){
+    let rows = 'auto minmax(190px,38vh)', areas = '"header" "map"';
+    active.forEach(s=>{ rows += ' minmax(120px,22vh)'; areas += ` "${s.key}"`; });
+    rows += ' minmax(170px,26vh) auto';
+    areas += ' "side" "timeline"';
+    appEl.style.gridTemplateColumns = '1fr';
+    appEl.style.gridTemplateRows = rows;
+    appEl.style.gridTemplateAreas = areas;
+  } else {
+    let cols = '320px 1fr', header = '"header header', mid = '"side map', tl = '"timeline timeline';
+    active.forEach(s=>{ cols += ' 250px'; header += ' header'; mid += ' '+s.key; tl += ' timeline'; });
+    appEl.style.gridTemplateColumns = cols;
+    appEl.style.gridTemplateRows = '';
+    appEl.style.gridTemplateAreas = `${header}" ${mid}" ${tl}"`;
+  }
+  setTimeout(()=> map.invalidateSize(), 150);
+}
+window.addEventListener('resize', updateLayout);
+
+STRIPS.forEach(({toggle,panel})=>{
+  const cb = document.getElementById(toggle);
+  const panelEl = document.getElementById(panel);
+  cb.addEventListener('change', updateLayout);
+  panelEl.querySelector('.stripCloseBtn').addEventListener('click', ()=>{ cb.checked=false; updateLayout(); });
+});
+
+function renderStripLists(){
+  const lc = document.getElementById('listCronologia'); lc.innerHTML='';
+  CRONOLOGIA.forEach(c=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="yr">${c.ys}</span>${LANG==='ca'?c.ca:c.es}`;
+    li.onclick = ()=> goToYear(c.ys);
+    lc.appendChild(li);
+  });
+
+  const lm = document.getElementById('listMonarques'); lm.innerHTML='';
+  MONARQUES.forEach(m=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="yr">${m.ys}\u2013${m.ye}</span>${LANG==='ca'?m.n_ca:m.n_es} — ${LANG==='ca'?m.note_ca:m.note_es}`;
+    li.onclick = ()=> goToYear(m.ys);
+    lm.appendChild(li);
+  });
+
+  const lg = document.getElementById('listGuerres'); lg.innerHTML='';
+  GUERRES.forEach(g=>{
+    const li = document.createElement('li'); li.className = g.out;
+    li.innerHTML = `<span class="yr">${g.ys}\u2013${g.ye}</span>${LANG==='ca'?g.n_ca:g.n_es} — ${LANG==='ca'?g.res_ca:g.res_es}`;
+    li.onclick = ()=> goToYear(g.ys);
+    lg.appendChild(li);
+  });
+
+  const lp = document.getElementById('listPersonatges'); lp.innerHTML='';
+  PERSONATGES.forEach(p=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="yr">${p.ys}\u2013${p.ye}</span>${LANG==='ca'?p.n_ca:p.n_es} (${LANG==='ca'?p.rol_ca:p.rol_es}) — ${LANG==='ca'?p.contrib_ca:p.contrib_es}`;
+    li.onclick = ()=> goToYear(p.ys);
+    lp.appendChild(li);
+  });
+
+  const lb = document.getElementById('listBatallesChron'); lb.innerHTML='';
+  BATALLES.forEach(b=>{
+    const li = document.createElement('li'); li.className = b.out;
+    li.innerHTML = `<span class="yr">${b.ys}</span>${LANG==='ca'?b.n_ca:b.n_es}`;
+    li.onclick = ()=> goToYear(b.ys);
+    lb.appendChild(li);
+  });
+}
+
+/* ===================== SCHERMO INTERO ===================== */
+function enterFullscreen(){
+  appEl.classList.add('is-fullscreen');
+  const req = appEl.requestFullscreen || appEl.webkitRequestFullscreen || appEl.msRequestFullscreen;
+  if(req){ req.call(appEl).catch(()=>{}); }
+  setTimeout(()=> map.invalidateSize(), 200);
+}
+function exitFullscreenMode(){
+  appEl.classList.remove('is-fullscreen');
+  const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+  if(document.fullscreenElement && exit){ exit.call(document).catch(()=>{}); }
+  setTimeout(()=> map.invalidateSize(), 200);
+}
+document.getElementById('fullscreenBtn').addEventListener('click', enterFullscreen);
+document.getElementById('exitFullscreenBtn').addEventListener('click', exitFullscreenMode);
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && appEl.classList.contains('is-fullscreen')) exitFullscreenMode();
+});
+document.addEventListener('fullscreenchange', ()=>{
+  if(!document.fullscreenElement) appEl.classList.remove('is-fullscreen');
+});
+
+/* ===================== INIT ===================== */
+refreshAllTexts();
+renderEntityChecks();
+renderLegend();
+renderStripLists();
+updateLayout();
+goToYear(YMIN);
+</script>
+</body>
+</html>
