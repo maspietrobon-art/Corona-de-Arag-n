@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.18)</title>
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.36)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -18,51 +18,77 @@
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--ink);font-family:'EB Garamond',serif;color:var(--ink);}
   #app{
-    display:grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto;
+    display:grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr auto auto auto;
     height:100vh; height:100dvh;
-    grid-template-areas: "header header" "side map" "timeline timeline";
+    grid-template-areas: "header header" "side map" "timeline timeline" "footer footer" "bottombar bottombar";
     background:var(--parchment); position:relative;
   }
   #app > header, #app > aside, #app > #map, #app > #timeline{ min-width:0; }
   @media (max-width:900px){
-    #app{grid-template-columns:1fr; grid-template-rows:auto minmax(320px,42vh) minmax(280px,44vh) auto;
-      grid-template-areas:"header" "map" "side" "timeline"; height:100vh; height:100dvh; overflow-y:auto;}
+    #app{grid-template-columns:1fr; grid-template-rows:auto minmax(320px,42vh) minmax(280px,44vh) auto auto auto;
+      grid-template-areas:"header" "map" "side" "timeline" "footer" "bottombar"; height:100vh; height:100dvh; overflow-y:auto;}
   }
   header{grid-area:header; background:linear-gradient(180deg,#2a1c14,#1c130d); color:var(--parchment);
-    padding:8px 14px; border-bottom:3px solid var(--gold); display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:0;}
-  header h1{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; margin:0; color:#f2e6c4; line-height:1.1;}
-  header .sub{font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.8px; text-transform:uppercase; color:#d3a862; opacity:.9; display:block;}
-  #headerTitleBlock{display:flex; flex-direction:column; gap:1px;}
-  #headerControls{margin-left:auto; display:flex; align-items:center; gap:8px;}
-  #langToggle{display:flex; gap:5px;}
-  #langToggle button{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#2a1c14;
-    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+    padding:12px 14px; border-bottom:3px solid var(--gold); display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:0;}
+  header h1{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:19px; margin:0; color:#f2e6c4; line-height:1.25;}
+  header .sub{font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.8px; text-transform:uppercase; color:#d3a862; opacity:.9; display:block; margin-top:3px;}
+  #headerTitleBlock{display:flex; flex-direction:column; gap:1px; padding:2px 0;}
+  #langToggle{display:flex; gap:5px; flex-shrink:0;}
+  #langToggle button{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.5px; background:#2a1c14;
+    color:#f2e6c4; border:1.5px solid var(--gold); padding:6px 12px; cursor:pointer; border-radius:2px;}
   #langToggle button.active{background:var(--gold); color:#2a1c14; font-weight:700;}
-  #fullscreenBtn{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#2a1c14;
-    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
+
+  /* pulsante schermo intero: dentro alla mappa, in alto a destra */
+  #fullscreenBtn{position:absolute; top:10px; right:10px; z-index:1000; font-size:15px; line-height:1;
+    background:rgba(42,28,20,.85); color:#f2e6c4; border:1.5px solid var(--gold); padding:7px 9px; cursor:pointer; border-radius:3px;}
   #fullscreenBtn:hover{background:#3a281c;}
-  #supportBtn{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px; background:#5a1e22;
-    color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
-  #supportBtn:hover{background:#7a2a2f;}
-  #supportModalOverlay{display:none; position:fixed; inset:0; z-index:5000; background:rgba(20,12,8,.75);
+  #exitFullscreenBtn{display:none; position:absolute; top:10px; right:10px; z-index:1000; font-size:15px; line-height:1;
+    background:var(--corona); color:#f2e6c4; border:1.5px solid var(--gold); padding:7px 9px; cursor:pointer; border-radius:3px;}
+  #app.is-fullscreen #exitFullscreenBtn{display:inline-block;}
+  #app.is-fullscreen #fullscreenBtn{display:none;}
+  #app.is-fullscreen{position:fixed; inset:0; z-index:3000; height:100vh; height:100dvh; width:100vw;
+    grid-template-rows: auto 1fr auto !important; grid-template-areas: "header header" "map map" "timeline timeline" !important;}
+  #app.is-fullscreen aside.mainside, #app.is-fullscreen footer.disclaimer, #app.is-fullscreen #bottomBar, #app.is-fullscreen .side-strip{display:none !important;}
+
+  /* barra finale: sostegno + commenti, sempre in fondo alla pagina */
+  #bottomBar{grid-area:bottombar; display:flex; flex-direction:column;}
+  #supportBarBtn, #commentBarBtn{width:100%; border:none; border-top:1px solid rgba(242,230,196,.15);
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.6px; padding:12px; cursor:pointer;}
+  #supportBarBtn{background:#5a1e22; color:#f2e6c4;}
+  #supportBarBtn:hover{background:#7a2a2f;}
+  #commentBarBtn{background:#2a1c14; color:#f2e6c4;}
+  #commentBarBtn:hover{background:#3a281c;}
+
+  #supportModalOverlay, #commentModalOverlay{display:none; position:fixed; inset:0; z-index:5000; background:rgba(20,12,8,.75);
     align-items:center; justify-content:center; padding:20px;}
-  #supportModalOverlay.open{display:flex;}
-  #supportModal{position:relative; max-width:480px; width:100%; max-height:85vh; overflow-y:auto;
+  #supportModalOverlay.open, #commentModalOverlay.open{display:flex;}
+  #supportModal, #commentModal{position:relative; max-width:480px; width:100%; max-height:85vh; overflow-y:auto;
     background:var(--parchment); border:2px solid var(--gold); border-radius:6px; padding:24px 22px 20px;
     box-shadow:0 12px 40px rgba(0,0,0,.5); font-family:'EB Garamond',serif; color:var(--ink);}
-  #supportModal h2{font-family:'Cormorant Garamond',serif; font-size:22px; margin:0 0 12px; color:var(--corona);}
-  #supportModal p{font-size:14px; line-height:1.5; margin:0 0 16px;}
-  #supportCloseBtn{position:absolute; top:10px; right:12px; background:none; border:none; font-size:18px;
+  #supportModal h2, #commentModal h2{font-family:'Cormorant Garamond',serif; font-size:22px; margin:0 0 12px; color:var(--corona);}
+  #supportModal p, #commentModal p{font-size:14px; line-height:1.5; margin:0 0 16px;}
+  #supportCloseBtn, #commentCloseBtn{position:absolute; top:10px; right:12px; background:none; border:none; font-size:18px;
     color:var(--ink-soft); cursor:pointer;}
   .support-row{margin:0 0 12px; font-size:13px; line-height:1.4; padding-bottom:10px; border-bottom:1px solid var(--line);}
   .support-row b{display:block; color:var(--corona); font-family:'IBM Plex Mono',monospace; font-size:11px;
     text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px;}
   .support-row:last-child{border-bottom:none;}
-  #app.is-fullscreen{position:fixed; inset:0; z-index:3000; height:100vh; height:100dvh;}
-  #exitFullscreenBtn{display:none; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.5px;
-    background:var(--corona); color:#f2e6c4; border:1.5px solid var(--gold); padding:5px 10px; cursor:pointer; border-radius:2px;}
-  #app.is-fullscreen #exitFullscreenBtn{display:inline-block;}
-  #app.is-fullscreen #fullscreenBtn{display:none;}
+  #commentForm{display:flex; flex-direction:column; gap:10px;}
+  #commentText, #commentEmail{font-family:'EB Garamond',serif; font-size:14px; padding:8px 10px; border:1.5px solid var(--line);
+    border-radius:4px; background:#fffdf6; color:var(--ink); resize:vertical;}
+  #commentSendBtn{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.6px; background:var(--corona);
+    color:#f2e6c4; border:none; border-radius:4px; padding:10px; cursor:pointer;}
+  #commentSendBtn:hover{background:#a1202f;}
+
+  /* badge del periode històric i flash de doble clic, dins la mapa */
+  #periodBadge{position:absolute; bottom:10px; left:10px; z-index:1000; background:rgba(42,28,20,.88); color:#f2e6c4;
+    border:1.5px solid var(--gold); border-radius:3px; padding:6px 12px; font-family:'Cormorant Garamond',serif;
+    font-size:13px; font-weight:600; max-width:56%; line-height:1.3;}
+  .skip-flash{position:absolute; top:50%; transform:translateY(-50%) scale(0.6); z-index:1200; font-family:'IBM Plex Mono',monospace;
+    font-size:26px; font-weight:700; color:#fff; background:rgba(0,0,0,.45); border-radius:50%; width:64px; height:64px;
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .15s, transform .15s;}
+  #skipFlashLeft{left:8%;} #skipFlashRight{right:8%;}
+  .skip-flash.show{opacity:1; transform:translateY(-50%) scale(1);}
 
   aside.mainside{grid-area:side; background:var(--parchment-dark); border-right:3px solid var(--gold);
     overflow-y:auto; padding:14px 16px 40px;}
@@ -133,9 +159,11 @@
   #yearReadout{font-family:'Cormorant Garamond',serif; font-weight:700; font-size:18px; color:#f2e6c4; min-width:48px;
     flex-shrink:0; text-align:right; display:block;}
   @media (max-width:700px){
-    #timeline{gap:5px; padding:6px 8px;}
-    .nudgeBtn{display:none;} /* su schermi molto stretti, nascondi i pulsanti di salto rapido: restano play, slider e anno */
-    #speedSelect{display:none;}
+    #timeline{gap:4px; padding:6px 6px;}
+    .nudgeBtn{display:none;} /* su schermi molto stretti, nascondi solo i pulsanti di salto rapido: restano play, velocità, slider e anno */
+    #speedSelect{font-size:10px; padding:4px 1px; min-width:0;}
+    #yearInput{width:46px; font-size:11px;}
+    #yearReadout{font-size:15px; min-width:38px;}
   }
 
   .popup-ca, .popup-es{font-family:'EB Garamond',serif; font-size:13px; max-width:260px;}
@@ -154,7 +182,7 @@
   .m-dedication{background:radial-gradient(circle,#d8f0d0,#5a9b5f 70%); color:#2a1c14;}
   .m-dedication-nominal{background:radial-gradient(circle,#e8e8e8,#9099a3 70%); border:2px dashed #5a6470; color:#2a1c14; opacity:.85;}
 
-  footer.disclaimer{grid-column:1/-1; font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-align:center;
+  footer.disclaimer{grid-area:footer; font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-align:center;
     color:#8c8270; padding:5px; background:var(--parchment-dark);}
 </style>
 </head>
@@ -163,16 +191,11 @@
   <header>
     <div id="headerTitleBlock">
       <h1 id="titleTxt">La Corona d'Aragó</h1>
-      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.18</span>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.36</span>
     </div>
-    <div id="headerControls">
-      <button id="supportBtn">♥ <span id="lblSupport">Suport</span></button>
-      <button id="fullscreenBtn">⛶ <span id="lblFullscreen">Pantalla completa</span></button>
-      <button id="exitFullscreenBtn">✕ <span id="lblExitFullscreen">Sortir</span></button>
-      <div id="langToggle">
-        <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
-        <button id="btnES" onclick="setLang('es')">ES</button>
-      </div>
+    <div id="langToggle">
+      <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
+      <button id="btnES" onclick="setLang('es')">ES</button>
     </div>
   </header>
 
@@ -185,6 +208,22 @@
       <div class="support-row"><b>Revolut</b><span id="supportRevolut">Pots enviar-me pagaments per Revolut mitjançant aquest enllaç: revolut.me/massimxz2d</span></div>
       <div class="support-row"><b>Bizum</b><span>+34 626 651 196</span></div>
       <div class="support-row"><b id="supportIbanLabel">Transferència (IBAN Revolut)</b><span id="supportIban">Beneficiari: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, Espanya</span></div>
+    </div>
+  </div>
+
+  <div id="commentModalOverlay">
+    <div id="commentModal">
+      <button id="commentCloseBtn">✕</button>
+      <h2 id="commentTitle">Aporta una novetat o correcció</h2>
+      <p id="commentBody">Aquest espai no és per a comentaris generals ni crítiques: és un canal directe per aportar dades noves, fonts, correccions o ampliacions que ajudin a fer avançar, corregir i completar el projecte.</p>
+      <form id="commentForm" action="https://formsubmit.co/mas.pietrobon@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="Nova aportació — Mapa Corona d'Aragó">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="table">
+        <textarea name="Missatge" id="commentText" rows="7" placeholder="Escriu aquí la teva aportació…" required></textarea>
+        <input type="email" name="Correu de contacte (opcional)" id="commentEmail" placeholder="El teu correu, si vols resposta (opcional)">
+        <button type="submit" id="commentSendBtn">Enviar</button>
+      </form>
     </div>
   </div>
 
@@ -213,8 +252,13 @@
   </aside>
 
   <div id="map">
+    <button id="fullscreenBtn">⛶</button>
+    <button id="exitFullscreenBtn">✕</button>
     <button id="legendToggleBtn">☰ <span id="lblLegendBtn">Llegenda</span></button>
     <div id="legendPanel"></div>
+    <div id="periodBadge"></div>
+    <div id="skipFlashLeft" class="skip-flash">«10</div>
+    <div id="skipFlashRight" class="skip-flash">10»</div>
   </div>
 
   <div id="timeline">
@@ -226,10 +270,10 @@
     </select>
     <button class="nudgeBtn" id="nudgeBack10">«10</button>
     <button class="nudgeBtn" id="nudgeBack1">‹1</button>
-    <input type="range" id="yearSlider" min="800" max="1720" value="1137" step="1">
+    <input type="range" id="yearSlider" min="800" max="1725" value="1137" step="1">
     <button class="nudgeBtn" id="nudgeFwd1">1›</button>
     <button class="nudgeBtn" id="nudgeFwd10">10»</button>
-    <input type="number" id="yearInput" min="800" max="1720" value="1137">
+    <input type="number" id="yearInput" min="800" max="1725" value="1137">
     <div id="yearReadout">1137</div>
   </div>
 
@@ -240,11 +284,15 @@
   <aside id="batallesChronPanel" class="side-strip"><button class="stripCloseBtn" data-toggle="batallesChronToggle">✕</button><h3 id="batallesPanelTitle"></h3><ul id="listBatallesChron"></ul></aside>
 
   <footer class="disclaimer" id="disclaimerTxt"></footer>
+  <div id="bottomBar">
+    <button id="supportBarBtn">♥ <span id="lblSupportBar">Sosté el projecte</span></button>
+    <button id="commentBarBtn">✎ <span id="lblCommentBar">Aporta una novetat</span></button>
+  </div>
 </div>
 
 <script>
 /* =======================================================================
-   DADES — esborrany v0.18. Camps bilingües amb sufix _ca / _es.
+   DADES — esborrany v0.36. Camps bilingües amb sufix _ca / _es.
    ======================================================================= */
 const ENTITATS = {
   "Comtat de Barcelona": {color:"#8f1626", label_ca:"Comtat de Barcelona (pre-unió)", label_es:"Condado de Barcelona (pre-unión)", noFilter:1},
@@ -255,6 +303,7 @@ const ENTITATS = {
   "Comtat de Pallars Jussà":  {color:"#6a9a3a", label_ca:"Comtat de Pallars Jussà", label_es:"Condado de Pallars Jussà", noFilter:1},
   "Comtat de Cerdanya":  {color:"#2f8f7a", label_ca:"Comtat de Cerdanya (pre-unió)", label_es:"Condado de Cerdaña (pre-unión)", noFilter:1},
   "Comtat de Rosselló":  {color:"#a13a2e", label_ca:"Comtat de Rosselló (pre-unió)", label_es:"Condado de Rosellón (pre-unión)", noFilter:1},
+  "Comtat de Conflent":  {color:"#3a7ab5", label_ca:"Comtat de Conflent (pre-unió)", label_es:"Condado de Conflent (pre-unión)", noFilter:1},
   "Comtat de Besalú":    {color:"#c9a227", label_ca:"Comtat de Besalú", label_es:"Condado de Besalú", noFilter:1},
   "Comtat d'Empúries (pre-unió)": {color:"#5a8f4a", label_ca:"Comtat d'Empúries (pre-unió)", label_es:"Condado de Ampurias (pre-unión)", noFilter:1},
   "Marca Hispànica":     {color:"#9a9a9a", label_ca:"Marca Hispànica (carolíngia)", label_es:"Marca Hispánica (carolingia)", noFilter:1},
@@ -269,10 +318,11 @@ const ENTITATS = {
   "Corona d'Aragó":     {color:"#701c30", label_ca:"Corona d'Aragó (altres territoris)", label_es:"Corona de Aragón (otros territorios)"},
   "Regne de Mallorca":  {color:"#3f6b34", label_ca:"Regne de Mallorca (indep.)",  label_es:"Reino de Mallorca (indep.)"},
   "Companyia Catalana": {color:"#6a3b8f", label_ca:"Ducats grecs (Comp. Catalana)", label_es:"Ducados griegos (Comp. Catalana)"},
-  "Jutjat d'Arborea":   {color:"#4a6b8f", label_ca:"Jutjat d'Arborea (Sardenya)", label_es:"Judicado de Arborea (Cerdeña)"},
   "Regne d'Espanya":    {color:"#2e5e8c", label_ca:"Monarquia Hispànica (post-1516)", label_es:"Monarquía Hispánica (post-1516)"},
   "Regne Unit":         {color:"#4a7a3a", label_ca:"Regne Unit (cessions d'Utrecht)", label_es:"Reino Unido (cesiones de Utrecht)"},
-  "Regne de França":    {color:"#7a5a9a", label_ca:"Regne de França (cessions)", label_es:"Reino de Francia (cesiones)"}
+  "Regne de França":    {color:"#7a5a9a", label_ca:"Regne de França (cessions)", label_es:"Reino de Francia (cesiones)"},
+  "Corona de Castella (unió personal)": {color:"#2e5e8c", label_ca:"Corona de Castella (unió personal amb Aragó)", label_es:"Corona de Castilla (unión personal con Aragón)"},
+  "Corona de Portugal (unió personal)": {color:"#3f7a4a", label_ca:"Corona de Portugal (Unió Ibèrica, 1580-1640)", label_es:"Corona de Portugal (Unión Ibérica, 1580-1640)"}
 };
 
 const TERRITORIS = [
@@ -294,6 +344,8 @@ const TERRITORIS = [
   note_ca:"Unit a Barcelona el 1117.", note_es:"Unido a Barcelona en 1117."},
  {n_ca:"Comtat de Rosselló", n_es:"Condado de Rosellón", ent:"Comtat de Rosselló", ys:900, ye:1172, lat:42.6986, lon:2.8956,
   note_ca:"Unit definitivament a Barcelona el 1172.", note_es:"Unido definitivamente a Barcelona en 1172."},
+ {n_ca:"Comtat de Conflent", n_es:"Condado de Conflent", ent:"Comtat de Conflent", ys:868, ye:1117, lat:42.5833, lon:2.2667,
+  note_ca:"Comtat pirinenc originari, sovint unit a Cerdanya; incorporat a Barcelona el 1117.", note_es:"Condado pirenaico originario, a menudo unido a Cerdaña; incorporado a Barcelona en 1117."},
  {n_ca:"Rosselló i Cerdanya (dins la Corona)", n_es:"Rosellón y Cerdaña (dentro de la Corona)", ent:"Principat de Catalunya", ys:1172, ye:1462, lat:42.6986, lon:2.8956,
   note_ca:"Territori estable de la Corona fins a l'empenyorament del 1462.", note_es:"Territorio estable de la Corona hasta el empeño de 1462."},
  {n_ca:"Rosselló i Cerdanya (empenyorats a França)", n_es:"Rosellón y Cerdaña (empeñados a Francia)", ent:"Regne de França", ys:1462, ye:1493, lat:42.6986, lon:2.8956,
@@ -350,10 +402,6 @@ const TERRITORIS = [
   note_ca:"Ocupat breument per Jaume II; cedit a Castella pel Tractat d'Elx (1305), llevat d'Oriola i Alacant.", note_es:"Ocupado brevemente por Jaime II; cedido a Castilla por el Tratado de Elche (1305), salvo Orihuela y Alicante."},
  {n_ca:"Regne de Sicília (Trinàcria)", n_es:"Reino de Sicilia (Trinacria)", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.5, lon:14.0,
   note_ca:"Vespres Sicilianes (1282). Pel Tractat de Caltabellotta (1302) es rebateja com a 'Regne de Trinàcria', governat per Frederic III i successors com a línia separada; el 1379 Pere IV n'és reconegut rei via matrimoni amb Elionor de Sicília, però la unió efectiva amb la resta de la Corona no arriba fins a Martí l'Humà (1409) i es consolida amb Alfons el Magnànim.", note_es:"Vísperas Sicilianas (1282). Por el Tratado de Caltabellotta (1302) se rebautiza como 'Reino de Trinacria', gobernado por Federico III y sucesores como línea separada; en 1379 Pedro IV es reconocido rey vía matrimonio con Leonor de Sicilia, pero la unión efectiva con el resto de la Corona no llega hasta Martín el Humano (1409) y se consolida con Alfonso el Magnánimo."},
- {n_ca:"Regne de Sicília (Monarquia Hispànica)", n_es:"Reino de Sicilia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:37.5, lon:14.0,
-  note_ca:"Continua com a regne separat dins la Monarquia Hispànica fins al segle XVIII.", note_es:"Continúa como reino separado dentro de la Monarquía Hispánica hasta el siglo XVIII."},
- {n_ca:"Jutjat d'Arborea", n_es:"Judicado de Arborea", ent:"Jutjat d'Arborea", ys:1100, ye:1420, lat:39.8833, lon:8.5667,
-  note_ca:"Darrer dels jutjats sards independents; resistí la conquesta catalana fins al 1420.", note_es:"Último de los judicados sardos independientes; resistió la conquista catalana hasta 1420."},
  {n_ca:"Regne de Sardenya", n_es:"Reino de Cerdeña", ent:"Regne de Sardenya", ys:1324, ye:1516, lat:40.1, lon:9.1,
   note_ca:"Ocupació militar 1323-1324; conquesta llarga i contestada pel Jutjat d'Arborea i per Génova (revoltes constants); Corts pròpies des de 1355. El control efectiu i definitiu de tota l'illa no s'aconsegueix fins a la dècada de 1470.", note_es:"Ocupación militar 1323-1324; conquista larga y disputada por el Judicado de Arborea y por Génova (revueltas constantes); Cortes propias desde 1355. El control efectivo y definitivo de toda la isla no se consigue hasta la década de 1470."},
  {n_ca:"Regne de Sardenya (Monarquia Hispànica)", n_es:"Reino de Cerdeña (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.1, lon:9.1,
@@ -594,10 +642,6 @@ const TERRITORIS = [
   note_ca:"Antiga seu episcopal visigoda, integrada a la Marca Hispànica des de 801.", note_es:"Antigua sede episcopal visigoda, integrada en la Marca Hispánica desde 801."},
  {n_ca:"Tortosa (seu episcopal restaurada)", n_es:"Tortosa (sede episcopal restaurada)", ent:"Regne de València", ys:1148, ye:1516, lat:40.8126, lon:0.5211,
   note_ca:"Restauració de la seu episcopal immediatament després de la conquesta.", note_es:"Restauración de la sede episcopal inmediatamente después de la conquista."},
- {n_ca:"Comtat de Provença (unit a Barcelona sota Ramon Berenguer III)", n_es:"Condado de Provenza (unido a Barcelona bajo Ramón Berenguer III)", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.9493, lon:4.8055,
-  note_ca:"Ramon Berenguer III es casa amb Dolça de Provença (1112): durant gairebé 20 anys una mateixa persona governa Barcelona i (bona part de) la Provença occidental.", note_es:"Ramón Berenguer III se casa con Dulce de Provenza (1112): durante casi 20 años una misma persona gobierna Barcelona y (buena parte de) la Provenza occidental."},
- {n_ca:"Comtat de Provença (branca cadet catalana)", n_es:"Condado de Provenza (rama cadete catalana)", ent:"Comtats catalans", nominal:1, ys:1131, ye:1245, lat:43.9493, lon:4.8055,
-  note_ca:"A la mort de Ramon Berenguer III (1131), Provença passa a un fill segon com a branca cadet separada, NO unida a la Corona d'Aragó (que neix el 1137 amb un altre fill, Ramon Berenguer IV). La línia s'extingeix el 1245 quan Beatriu de Provença es casa amb Carles d'Anjou, futur rival de la Corona a Sicília.", note_es:"A la muerte de Ramón Berenguer III (1131), Provenza pasa a un hijo segundo como rama cadete separada, NO unida a la Corona de Aragón (que nace en 1137 con otro hijo, Ramón Berenguer IV). La línea se extingue en 1245 cuando Beatriz de Provenza se casa con Carlos de Anjou, futuro rival de la Corona en Sicilia."},
  {n_ca:"Giudicat de Càller", n_es:"Judicado de Cagliari", ent:"Regne de Sardenya", ys:1258, ye:1516, lat:39.2238, lon:9.1217,
   note_ca:"El més antic dels quatre judicats sards; caigut sota influència pisana el 1258, conquerit pels catalanoaragonesos el 1324.", note_es:"El más antiguo de los cuatro judicados sardos; caído bajo influencia pisana en 1258, conquistado por los catalanoaragoneses en 1324."},
  {n_ca:"Giudicat de Gallura", n_es:"Judicado de Gallura", ent:"Regne de Sardenya", ys:1288, ye:1516, lat:40.9333, lon:9.55,
@@ -654,7 +698,6 @@ const TERRITORIS = [
   note_ca:"Llegendari darrer bastió musulmà de la Catalunya Nova, conquerit el 1153 junt amb Prades.", note_es:"Legendario último bastión musulmán de la Cataluña Nueva, conquistado en 1153 junto con Prades."},
  {n_ca:"Ares del Maestrat", n_es:"Ares del Maestrat", ent:"Regne d'Aragó", ys:1232, ye:1516, lat:40.4361, lon:-0.1517,
   note_ca:"Conquerida abans que Morella, obrint el camí cap a la plana valenciana.", note_es:"Conquistada antes que Morella, abriendo el camino hacia la llanura valenciana."},
- /* --- continuacions automàtiques "Monarquia Hispànica" (post-1516) generades per completar el mapa --- */
  {n_ca:"Rosselló i Cerdanya (recuperats) (Monarquia Hispànica)", n_es:"Rosellón y Cerdaña (recuperados) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.6986, lon:2.8956,
   note_ca:"Continua com a part de la Monarquia Hispànica després de 1516, seguint la sort de la seva regió.", note_es:"Continúa como parte de la Monarquía Hispánica después de 1516, siguiendo la suerte de su región."},
  {n_ca:"Regne d'Aragó (dins la Corona) (Monarquia Hispànica)", n_es:"Reino de Aragón (dentro de la Corona) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.6488, lon:-0.8891,
@@ -921,9 +964,6 @@ const TERRITORIS = [
   note_ca:"Continua com a part de la Monarquia Hispànica després de 1516, seguint la sort de la seva regió.", note_es:"Continúa como parte de la Monarquía Hispánica después de 1516, siguiendo la suerte de su región."},
  {n_ca:"Ares del Maestrat (Monarquia Hispànica)", n_es:"Ares del Maestrat (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:40.4361, lon:-0.1517,
   note_ca:"Continua com a part de la Monarquia Hispànica després de 1516, seguint la sort de la seva regió.", note_es:"Continúa como parte de la Monarquía Hispánica después de 1516, siguiendo la suerte de su región."},
-
-,
- /* --- capitals de provincia del Regne de Nàpols que faltaven (sol·licitat per l'usuari) --- */
  {n_ca:"Avellino", n_es:"Avellino", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.9143, lon:14.7931,
   note_ca:"Capital de la província de Principat Ulterior dins el Regne de Nàpols.", note_es:"Capital de la província de Principat Ulterior dentro del Reino de Nápoles."},
  {n_ca:"Avellino (Monarquia Hispànica)", n_es:"Avellino (Monarquia Hispànica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.9143, lon:14.7931,
@@ -952,8 +992,6 @@ const TERRITORIS = [
   note_ca:"Capital de la província de Calabria Citerior dins el Regne de Nàpols.", note_es:"Capital de la província de Calabria Citerior dentro del Reino de Nápoles."},
  {n_ca:"Cosenza (Monarquia Hispànica)", n_es:"Cosenza (Monarquia Hispànica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:39.2988, lon:16.2539,
   note_ca:"Continua com a capital de provincia dins el virregnat espanyol de Nàpols.", note_es:"Continua como capital de provincia dentro del virreinato español de Nápoles."},
-,
- /* --- densificació addicional: Aragó oriental, Múrcia/Alacant, Sardenya i Sicília interiors, Pulla --- */
  {n_ca:"Osca (Somontano)", n_es:"Huesca (Somontano)", ent:"Regne d'Aragó", ys:1096, ye:1516, lat:42.12, lon:-0.25,
   note_ca:"Comarca del Somontano, consolidada arran de la conquesta d'Osca.", note_es:"Comarca del Somontano, consolidada tras la conquista de Huesca."},
  {n_ca:"Osca (Somontano) (Monarquia Hispànica)", n_es:"Huesca (Somontano) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.12, lon:-0.25,
@@ -1006,18 +1044,8 @@ const TERRITORIS = [
   note_ca:"Port de la Pulla incorporat amb el regne.", note_es:"Puerto de Apulia incorporado con el reino."},
  {n_ca:"Molfetta (Monarquia Hispànica)", n_es:"Molfetta (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.2003, lon:16.6006,
   note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
-,
- /* --- densificació sol·licitada: Navarra (unió 1076-1134), totes les illes Balears, corredor Nàpols-Reggio Calàbria --- */
- {n_ca:"Pamplona (Iruña)", n_es:"Pamplona (Iruña)", ent:"Regne d'Aragó", ys:1076, ye:1134, lat:42.8125, lon:-1.6458,
-  note_ca:"Capital del Regne de Navarra durant la unió amb Aragó.", note_es:"Capital del Reino de Navarra durante la unión con Aragón."},
  {n_ca:"Estella (Lizarra)", n_es:"Estella (Lizarra)", ent:"Regne d'Aragó", ys:1076, ye:1134, lat:42.6714, lon:-2.0328,
   note_ca:"Vila clau del Camí de Sant Jaume navarrès.", note_es:"Villa clave del Camino de Santiago navarro."},
- {n_ca:"Sangüesa (Zangoza)", n_es:"Sangüesa (Zangoza)", ent:"Regne d'Aragó", ys:1076, ye:1134, lat:42.5744, lon:-1.2822,
-  note_ca:"Plaça oriental de Navarra, fronterera amb Aragó.", note_es:"Plaza oriental de Navarra, fronteriza con Aragón."},
- {n_ca:"Punt la Reina (Gares)", n_es:"Puente la Reina (Gares)", ent:"Regne d'Aragó", ys:1076, ye:1134, lat:42.6714, lon:-1.8139,
-  note_ca:"Punt de trobada de les rutes del Camí de Sant Jaume.", note_es:"Punto de encuentro de las rutas del Camino de Santiago."},
- {n_ca:"Tafalla", n_es:"Tafalla", ent:"Regne d'Aragó", ys:1076, ye:1134, lat:42.5286, lon:-1.6742,
-  note_ca:"Vila de la Ribera navarresa.", note_es:"Villa de la Ribera navarra."},
  {n_ca:"Manacor", n_es:"Manacor", ent:"Regne de Mallorca (Corona)", ys:1230, ye:1516, lat:39.5697, lon:3.2103,
   note_ca:"Vila del llevant mallorquí, repoblada poc després de la conquesta.", note_es:"Villa del levante mallorquín, repoblada poco después de la conquista."},
  {n_ca:"Manacor (Monarquia Hispànica)", n_es:"Manacor (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.5697, lon:3.2103,
@@ -1108,6 +1136,529 @@ const TERRITORIS = [
   note_ca:"Plaça de l'istme calabrès.", note_es:"Plaza del istmo calabrés."},
  {n_ca:"Lamezia (Nicastro) (Monarquia Hispànica)", n_es:"Lamezia (Nicastro) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:38.9686, lon:16.3097,
   note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Mataró", n_es:"Mataró", ent:"Principat de Catalunya", ys:940, ye:1516, lat:41.5381, lon:2.4447,
+  note_ca:"Antiga Iluro romana, vila costanera del Maresme.", note_es:"Antigua Iluro romana, villa costera del Maresme."},
+ {n_ca:"Mataró (Monarquia Hispànica)", n_es:"Mataró (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.5381, lon:2.4447,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Blanes", n_es:"Blanes", ent:"Principat de Catalunya", ys:1002, ye:1516, lat:41.6761, lon:2.7917,
+  note_ca:"Vila costanera, límit meridional de la Costa Brava.", note_es:"Villa costera, límite meridional de la Costa Brava."},
+ {n_ca:"Blanes (Monarquia Hispànica)", n_es:"Blanes (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.6761, lon:2.7917,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Palamós", n_es:"Palamós", ent:"Principat de Catalunya", ys:1277, ye:1516, lat:41.8459, lon:3.1294,
+  note_ca:"Port fundat per Pere el Gran el 1277.", note_es:"Puerto fundado por Pedro el Grande en 1277."},
+ {n_ca:"Palamós (Monarquia Hispànica)", n_es:"Palamós (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.8459, lon:3.1294,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Cadaqués", n_es:"Cadaqués", ent:"Comtat d'Empúries (pre-unió)", ys:1032, ye:1401, lat:42.2886, lon:3.2769,
+  note_ca:"Vila pesquera de l'extrem nord-est del comtat d'Empúries.", note_es:"Villa pesquera del extremo noreste del condado de Ampurias."},
+ {n_ca:"Figueres", n_es:"Figueres", ent:"Comtat d'Empúries (pre-unió)", ys:1267, ye:1401, lat:42.2662, lon:2.9622,
+  note_ca:"Vila central de l'Empordà, futura capital comarcal.", note_es:"Villa central del Ampurdán, futura capital comarcal."},
+ {n_ca:"Arle", n_es:"Arlés", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.6761, lon:4.6278,
+  note_ca:"Antiga ciutat romana, clau del Roine inferior.", note_es:"Antigua ciudad romana, clave del Ródano inferior."},
+ {n_ca:"Tarascó", n_es:"Tarascón", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.8058, lon:4.6603,
+  note_ca:"Plaça del Roine, frontera amb el comtat de Tolosa.", note_es:"Plaza del Ródano, frontera con el condado de Tolosa."},
+ {n_ca:"Avinyó (àrea d'influència)", n_es:"Aviñón (área de influencia)", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.9493, lon:4.8055,
+  note_ca:"Ciutat del Roine, més tard seu papal (segle XIV).", note_es:"Ciudad del Ródano, más tarde sede papal (siglo XIV)."},
+ {n_ca:"Vilanova i la Geltrú", n_es:"Villanueva y Geltrú", ent:"Principat de Catalunya", ys:987, ye:1516, lat:41.2241, lon:1.7252,
+  note_ca:"Vila costanera del Garraf.", note_es:"Villa costera del Garraf."},
+ {n_ca:"Vilanova i la Geltrú (Monarquia Hispànica)", n_es:"Villanueva y Geltrú (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.2241, lon:1.7252,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sitges", n_es:"Sitges", ent:"Principat de Catalunya", ys:990, ye:1516, lat:41.2379, lon:1.8057,
+  note_ca:"Vila costanera del Garraf.", note_es:"Villa costera del Garraf."},
+ {n_ca:"Sitges (Monarquia Hispànica)", n_es:"Sitges (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.2379, lon:1.8057,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Amposta (delta de l'Ebre)", n_es:"Amposta (delta del Ebro)", ent:"Regne de València", ys:1148, ye:1516, lat:40.7093, lon:0.581,
+  note_ca:"Extrem meridional del Principat, a tocar del delta.", note_es:"Extremo meridional del Principado, junto al delta."},
+ {n_ca:"Amposta (delta de l'Ebre) (Monarquia Hispànica)", n_es:"Amposta (delta del Ebro) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:40.7093, lon:0.581,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Utiel", n_es:"Utiel", ent:"Regne de València", ys:1238, ye:1516, lat:39.5667, lon:-1.2,
+  note_ca:"Comarca interior de la Requena-Utiel.", note_es:"Comarca interior de la Requena-Utiel."},
+ {n_ca:"Utiel (Monarquia Hispànica)", n_es:"Utiel (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.5667, lon:-1.2,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Xàtiva", n_es:"Játiva", ent:"Regne de València", ys:1244, ye:1516, lat:38.9895, lon:-0.5192,
+  note_ca:"Segona ciutat del regne, seu de la primera fàbrica de paper d'Europa.", note_es:"Segunda ciudad del reino, sede de la primera fábrica de papel de Europa."},
+ {n_ca:"Xàtiva (Monarquia Hispànica)", n_es:"Játiva (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:38.9895, lon:-0.5192,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Oriola (nucli)", n_es:"Orihuela (núcleo)", ent:"Regne de València", ys:1265, ye:1516, lat:38.0847, lon:-0.9453,
+  note_ca:"Capital de la Governació d'Oriola.", note_es:"Capital de la Gobernación de Orihuela."},
+ {n_ca:"Oriola (nucli) (Monarquia Hispànica)", n_es:"Orihuela (núcleo) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:38.0847, lon:-0.9453,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Terol (comarca)", n_es:"Teruel (comarca)", ent:"Regne d'Aragó", ys:1171, ye:1516, lat:40.3456, lon:-1.1065,
+  note_ca:"Capital de la Sierra de Terol.", note_es:"Capital de la Sierra de Teruel."},
+ {n_ca:"Terol (comarca) (Monarquia Hispànica)", n_es:"Teruel (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:40.3456, lon:-1.1065,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sabadell", n_es:"Sabadell", ent:"Principat de Catalunya", ys:1153, ye:1516, lat:41.5483, lon:2.1075,
+  note_ca:"Vila tèxtil del Vallès.", note_es:"Villa textil del Vallès."},
+ {n_ca:"Sabadell (Monarquia Hispànica)", n_es:"Sabadell (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.5483, lon:2.1075,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Cardedeu", n_es:"Cardedeu", ent:"Principat de Catalunya", ys:1032, ye:1516, lat:41.6403, lon:2.3597,
+  note_ca:"Vila del Vallès Oriental.", note_es:"Villa del Vallès Oriental."},
+ {n_ca:"Cardedeu (Monarquia Hispànica)", n_es:"Cardedeu (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.6403, lon:2.3597,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Palermo (comarca)", n_es:"Palermo (comarca)", ent:"Regne de Sicília", ys:1282, ye:1516, lat:38.05, lon:13.5,
+  note_ca:"Zona interior de la Conca d'Oro.", note_es:"Zona interior de la Conca d'Oro."},
+ {n_ca:"Palermo (comarca) (Monarquia Hispànica)", n_es:"Palermo (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:38.05, lon:13.5,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Regne de Mallorca (reincorporat) (Monarquia Hispànica)", n_es:"Reino de Mallorca (reincorporado) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.5696, lon:2.6502,
+  note_ca:"Continua com a part de la Monarquia Hispànica després de 1516.", note_es:"Continúa como parte de la Monarquía Hispánica después de 1516."},
+ {n_ca:"Utebo", n_es:"Utebo", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:41.7208, lon:-0.9878,
+  note_ca:"Vila propera a Saragossa, al Camí Reial.", note_es:"Villa cercana a Zaragoza, en el Camino Real."},
+ {n_ca:"Utebo (Monarquia Hispànica)", n_es:"Utebo (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.7208, lon:-0.9878,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Alagó", n_es:"Alagón", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.7714, lon:-1.1156,
+  note_ca:"Vila de l'Ebre, incorporada poc després de Saragossa.", note_es:"Villa del Ebro, incorporada poco después de Zaragoza."},
+ {n_ca:"Alagó (Monarquia Hispànica)", n_es:"Alagón (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.7714, lon:-1.1156,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Épila", n_es:"Épila", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.6081, lon:-1.2761,
+  note_ca:"Vila de la Comarca de Valdejalón.", note_es:"Villa de la Comarca de Valdejalón."},
+ {n_ca:"Épila (Monarquia Hispànica)", n_es:"Épila (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.6081, lon:-1.2761,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"La Almunia de Doña Godina", n_es:"La Almunia de Doña Godina", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:41.4808, lon:-1.3897,
+  note_ca:"Vila del Camí a Calataiud.", note_es:"Villa del Camino a Calatayud."},
+ {n_ca:"La Almunia de Doña Godina (Monarquia Hispànica)", n_es:"La Almunia de Doña Godina (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.4808, lon:-1.3897,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Cariñena", n_es:"Cariñena", ent:"Regne d'Aragó", ys:1120, ye:1516, lat:41.3389, lon:-1.2261,
+  note_ca:"Vila vinícola del Camp de Cariñena.", note_es:"Villa vinícola del Campo de Cariñena."},
+ {n_ca:"Cariñena (Monarquia Hispànica)", n_es:"Cariñena (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.3389, lon:-1.2261,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Pina de Ebro", n_es:"Pina de Ebro", ent:"Regne d'Aragó", ys:1119, ye:1516, lat:41.4897, lon:-0.5225,
+  note_ca:"Vila de la ribera de l'Ebre.", note_es:"Villa de la ribera del Ebro."},
+ {n_ca:"Pina de Ebro (Monarquia Hispànica)", n_es:"Pina de Ebro (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:41.4897, lon:-0.5225,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Almudévar", n_es:"Almudévar", ent:"Regne d'Aragó", ys:1105, ye:1516, lat:42.0369, lon:-0.5731,
+  note_ca:"Vila del camí entre Osca i Saragossa.", note_es:"Villa del camino entre Huesca y Zaragoza."},
+ {n_ca:"Almudévar (Monarquia Hispànica)", n_es:"Almudévar (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.0369, lon:-0.5731,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sos del Rei Catòlic", n_es:"Sos del Rey Católico", ent:"Regne d'Aragó", ys:1110, ye:1516, lat:42.5017, lon:-1.2131,
+  note_ca:"Vila aragonesa fronterera, ciutat natal de Ferran el Catòlic.", note_es:"Villa aragonesa fronteriza, ciudad natal de Fernando el Católico."},
+ {n_ca:"Sos del Rei Catòlic (Monarquia Hispànica)", n_es:"Sos del Rey Católico (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.5017, lon:-1.2131,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Niça (àrea d'influència)", n_es:"Niza (área de influencia)", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.7102, lon:7.262,
+  note_ca:"Extrem oriental de l'àrea d'influència comtal.", note_es:"Extremo oriental del área de influencia condal."},
+ {n_ca:"Forcauqier", n_es:"Forcalquier", ent:"Comtat de Barcelona", ys:1112, ye:1131, lat:43.9597, lon:5.7797,
+  note_ca:"Capital d'un vescomtat propi dins l'òrbita provençal.", note_es:"Capital de un vizcondado propio dentro de la órbita provenzal."},
+ {n_ca:"Jaca (primera capital)", n_es:"Jaca (primera capital)", ent:"Regne d'Aragó", ys:1035, ye:1516, lat:42.5709, lon:-0.5497,
+  note_ca:"Primera capital del Regne d'Aragó sota Ramiro I, abans del trasllat a Osca (1096) i Saragossa (1118).", note_es:"Primera capital del Reino de Aragón bajo Ramiro I, antes del traslado a Huesca (1096) y Zaragoza (1118)."},
+ {n_ca:"Jaca (primera capital) (Monarquia Hispànica)", n_es:"Jaca (primera capital) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.5709, lon:-0.5497,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+
+,
+ /* --- Navarra i Provença restaurades com a POSSESSIONS PERSONALS del monarca (cercle buit), no territori de la Corona --- */
+ {n_ca:"Pamplona (Iruña)", n_es:"Pamplona (Iruña)", ent:"Regne d'Aragó", personal:1, ys:1076, ye:1134, lat:42.8125, lon:-1.6458,
+  note_ca:"Capital del Regne de Navarra durant la unió amb Aragó. Regne de Navarra sota el mateix rei que Aragó (1076-1134), però mai formalment part de la Corona d'Aragó.", note_es:"Capital del Reino de Navarra durant la unió amb Aragón. Reino de Navarra bajo el mismo rey que Aragón (1076-1134), pero nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Estella (Lizarra)", n_es:"Estella (Lizarra)", ent:"Regne d'Aragó", personal:1, ys:1076, ye:1134, lat:42.6714, lon:-2.0328,
+  note_ca:"Vila clau del Camí de Sant Jaume navarrès. Regne de Navarra sota el mateix rei que Aragó (1076-1134), però mai formalment part de la Corona d'Aragó.", note_es:"Villa clave del Camino de Santiago navarro. Reino de Navarra bajo el mismo rey que Aragón (1076-1134), pero nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Sangüesa (Zangoza)", n_es:"Sangüesa (Zangoza)", ent:"Regne d'Aragó", personal:1, ys:1076, ye:1134, lat:42.5744, lon:-1.2822,
+  note_ca:"Plaça oriental de Navarra, fronterera amb Aragó. Regne de Navarra sota el mateix rei que Aragó (1076-1134), però mai formalment part de la Corona d'Aragó.", note_es:"Plaza oriental de Navarra, fronteriza con Aragón. Reino de Navarra bajo el mismo rey que Aragón (1076-1134), pero nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Punt la Reina (Gares)", n_es:"Puente la Reina (Gares)", ent:"Regne d'Aragó", personal:1, ys:1076, ye:1134, lat:42.6714, lon:-1.8139,
+  note_ca:"Punt de trobada de les rutes del Camí de Sant Jaume. Regne de Navarra sota el mateix rei que Aragó (1076-1134), però mai formalment part de la Corona d'Aragó.", note_es:"Punto de encuentro de las rutas del Camino de Santiago. Reino de Navarra bajo el mismo rey que Aragón (1076-1134), pero nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Tafalla", n_es:"Tafalla", ent:"Regne d'Aragó", personal:1, ys:1076, ye:1134, lat:42.5286, lon:-1.6742,
+  note_ca:"Vila de la Ribera navarresa. Regne de Navarra sota el mateix rei que Aragó (1076-1134), però mai formalment part de la Corona d'Aragó.", note_es:"Villa de la Ribera navarra. Reino de Navarra bajo el mismo rey que Aragón (1076-1134), pero nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Ais de Provença", n_es:"Aix-en-Provence", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.5297, lon:5.4474,
+  note_ca:"Capital tradicional del comtat de Provença. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Capital tradicional del condado de Provença. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Arle", n_es:"Arlés", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.6761, lon:4.6278,
+  note_ca:"Antiga ciutat romana, clau del Roine inferior. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Antigua ciudad romana, clau del Ródano inferior. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Marsella", n_es:"Marsella", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.2965, lon:5.3698,
+  note_ca:"Port principal de la Provença sota domini personal del comte. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Puerto principal de la Provença sota domini personal del conde. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Tarascó", n_es:"Tarascón", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.8058, lon:4.6603,
+  note_ca:"Plaça del Roine, frontera amb el comtat de Tolosa. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Plaza del Ródano, frontera con el condado de Tolosa. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Avinyó", n_es:"Aviñón", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.9493, lon:4.8055,
+  note_ca:"Ciutat del Roine, més tard seu papal (segle XIV). Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Ciudad del Ródano, más tarde sede papal (siglo XIV). Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Digne", n_es:"Digne", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:44.0908, lon:6.2356,
+  note_ca:"Interior alpí de la Provença. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Interior alpino de la Provenza. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Forcalquier", n_es:"Forcalquier", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.9597, lon:5.7797,
+  note_ca:"Capital d'un vescomtat propi dins l'àrea d'influència. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Capital d'un vescondado propi dins l'àrea d'influència. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Toló", n_es:"Tolón", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:43.1242, lon:5.928,
+  note_ca:"Port meridional de la Provença. Comtat de Provença governat personalment per Ramon Berenguer III (1112-1131) junt amb Barcelona, però mai unit a la Corona d'Aragó.", note_es:"Puerto meridional de la Provenza. Condado de Provenza gobernado personalmente por Ramón Berenguer III (1112-1131) junto con Barcelona, pero nunca unido a la Corona de Aragón."},
+ {n_ca:"Toledo", n_es:"Toledo", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.8628, lon:-4.0273,
+  note_ca:"Ciutat imperial, seu de la cort castellana. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Ciutat imperial, seu de la cort castellana. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+ {n_ca:"Valladolid", n_es:"Valladolid", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.6523, lon:-4.7245,
+  note_ca:"Seu freqüent de la cort dels Reis Catòlics. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Seu freqüent de la cort dels Reis Catòlics. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+ {n_ca:"Sevilla", n_es:"Sevilla", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.3891, lon:-5.9845,
+  note_ca:"Gran ciutat andalusa, base de l'expansió atlàntica castellana. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Gran ciutat andalusa, base de l'expansió atlàntica castellana. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+ {n_ca:"Burgos", n_es:"Burgos", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.3439, lon:-3.6969,
+  note_ca:"Antiga capital de Castella. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Antiga capital de Castella. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+ {n_ca:"Madrid", n_es:"Madrid", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.4168, lon:-3.7038,
+  note_ca:"Vila de la Meseta, futura capital de la monarquia. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Vila de la Meseta, futura capital de la monarquia. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+ {n_ca:"Granada", n_es:"Granada", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.1773, lon:-3.5986,
+  note_ca:"Darrer regne musulmà peninsular, conquerit el 1492 pels Reis Catòlics. Sota els mateixos monarques que Aragó des del 1479 (Ferran i Isabel), però Castella mai s'incorpora a la Corona d'Aragó: són corones separades unides només per la persona dels sobirans.", note_es:"Darrer regne musulmà peninsular, conquerit el 1492 pels Reis Catòlics. Bajo los mismos monarcas que Aragón desde 1479 (Fernando e Isabel), pero Castilla nunca se incorpora a la Corona de Aragón: son coronas separadas unidas solo por la persona de los soberanos."},
+,
+ /* --- densificació de Castella (unió personal 1479-1516), per equiparar-la a la densitat aragonesa --- */
+ {n_ca:"Salamanca", n_es:"Salamanca", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.9701, lon:-5.6635,
+  note_ca:"Ciutat universitària de Castella la Vella. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat universitària de Castella la Vella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Zamora", n_es:"Zamora", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.5033, lon:-5.7446,
+  note_ca:"Plaça del Duero. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Plaça del Duero. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Palència", n_es:"Palencia", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.0096, lon:-4.5288,
+  note_ca:"Ciutat de Terra de Campos. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat de Terra de Campos. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Segòvia", n_es:"Segovia", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.9429, lon:-4.1088,
+  note_ca:"Ciutat de l'aqüeducte romà, residència reial habitual. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat de l'aqüeducte romà, residència reial habitual. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Àvila", n_es:"Ávila", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.6566, lon:-4.6814,
+  note_ca:"Ciutat emmurallada de Castella la Vella. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat emmurallada de Castella la Vella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Sòria", n_es:"Soria", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.7636, lon:-2.4649,
+  note_ca:"Extrem oriental de Castella la Vella. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Extrem oriental de Castella la Vella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Lleó", n_es:"León", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.5987, lon:-5.5671,
+  note_ca:"Antiga capital del Regne de Lleó, unit a Castella. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Antiga capital del Regne de Lleó, unit a Castella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Astorga", n_es:"Astorga", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.4551, lon:-6.0526,
+  note_ca:"Ciutat lleonesa a la Via de la Plata. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat lleonesa a la Via de la Plata. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Burgos (comarca)", n_es:"Burgos (comarca)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.35, lon:-3.7,
+  note_ca:"Bressol històric de Castella. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Bressol històric de Castella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Conca", n_es:"Cuenca", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.0704, lon:-2.1374,
+  note_ca:"Ciutat de la Serrania, fundada arran de la conquesta musulmana. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat de la Serrania, fundada arran de la conquesta musulmana. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Ciudad Real", n_es:"Ciudad Real", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.9848, lon:-3.9272,
+  note_ca:"Fundada per Alfons X com a vila reial. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Fundada per Alfons X com a vila reial. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Guadalajara", n_es:"Guadalajara", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.6333, lon:-3.1669,
+  note_ca:"Ciutat de l'Alcarria. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat de l'Alcarria. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Alcalá de Henares", n_es:"Alcalá de Henares", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.4818, lon:-3.3635,
+  note_ca:"Seu universitària, ciutat natal de Cervantes. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Seu universitària, ciutat natal de Cervantes. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Còrdova", n_es:"Córdoba", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.8882, lon:-4.7794,
+  note_ca:"Antiga capital del Califat, conquerida per Ferran III el 1236. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Antiga capital del Califat, conquerida per Ferran III el 1236. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Cadis", n_es:"Cádiz", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.5271, lon:-6.2886,
+  note_ca:"Port atlàntic clau per a la futura expansió ultramarina. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port atlàntic clau per a la futura expansió ultramarina. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Jaén", n_es:"Jaén", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.7796, lon:-3.7849,
+  note_ca:"Ciutat fronterera amb el Regne de Granada. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat fronterera amb el Regne de Granada. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Màlaga", n_es:"Málaga", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.7213, lon:-4.4213,
+  note_ca:"Conquerida pels Reis Catòlics el 1487. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Conquerida pels Reis Catòlics el 1487. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Almeria", n_es:"Almería", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.834, lon:-2.4637,
+  note_ca:"Darrer gran port granadí, conquerit el 1489. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Darrer gran port granadí, conquerit el 1489. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Huelva", n_es:"Huelva", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.2614, lon:-6.9447,
+  note_ca:"Port atlàntic andalús. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port atlàntic andalús. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Cáceres", n_es:"Cáceres", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.4753, lon:-6.3724,
+  note_ca:"Ciutat emmurallada d'Extremadura. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat emmurallada d'Extremadura. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Badajoz", n_es:"Badajoz", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.8794, lon:-6.9707,
+  note_ca:"Plaça fronterera amb Portugal. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Plaça fronterera amb Portugal. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Mèrida", n_es:"Mérida", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.9165, lon:-6.3436,
+  note_ca:"Antiga capital romana de Lusitània. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Antiga capital romana de Lusitània. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Trujillo", n_es:"Trujillo", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.457, lon:-5.8797,
+  note_ca:"Vila natal de conqueridors com Pizarro. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Vila natal de conqueridors com Pizarro. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Santiago de Compostel·la", n_es:"Santiago de Compostela", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.8805, lon:-8.5456,
+  note_ca:"Gran centre de pelegrinatge cristià. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Gran centre de pelegrinatge cristià. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"La Corunya", n_es:"La Coruña", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.3623, lon:-8.4115,
+  note_ca:"Port atlàntic gallec. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port atlàntic gallec. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Lugo", n_es:"Lugo", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.0097, lon:-7.5567,
+  note_ca:"Ciutat emmurallada romana de Galícia. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat emmurallada romana de Galícia. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Ourense", n_es:"Orense", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.3399, lon:-7.8637,
+  note_ca:"Ciutat gallega de l'interior. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Ciutat gallega de l'interior. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Pontevedra", n_es:"Pontevedra", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.431, lon:-8.6444,
+  note_ca:"Port de la ria gallega. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port de la ria gallega. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Oviedo", n_es:"Oviedo", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.3603, lon:-5.8448,
+  note_ca:"Antiga capital del Regne d'Astúries. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Antiga capital del Regne d'Astúries. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Gijón", n_es:"Gijón", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.5322, lon:-5.6611,
+  note_ca:"Port astur del Cantàbric. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port astur del Cantàbric. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Santander", n_es:"Santander", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.4623, lon:-3.8099,
+  note_ca:"Port cantàbric. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port cantàbric. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Bilbao", n_es:"Bilbao", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.263, lon:-2.935,
+  note_ca:"Vila fundada el 1300, port biscaí. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Vila fundada el 1300, port biscaí. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Vitòria", n_es:"Vitoria", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.8467, lon:-2.6716,
+  note_ca:"Capital d'Àlaba. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Capital d'Àlaba. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Sant Sebastià", n_es:"San Sebastián", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:43.3183, lon:-1.9812,
+  note_ca:"Port guipuscoà. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Port guipuscoà. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Múrcia (castellana)", n_es:"Murcia (castellana)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.9922, lon:-1.1307,
+  note_ca:"Capital del Regne de Múrcia, sota la Corona de Castella des de la reconquesta al segle XIII. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Capital del Regne de Múrcia, sota la Corona de Castella des de la reconquesta al segle XIII. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Las Palmas de Gran Canaria", n_es:"Las Palmas de Gran Canaria", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:28.1235, lon:-15.4363,
+  note_ca:"Conquerida per Castella el 1478-1483. Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Conquerida per Castella el 1478-1483. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Santa Cruz de Tenerife", n_es:"Santa Cruz de Tenerife", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:28.4636, lon:-16.2518,
+  note_ca:"Darrera illa canària conquerida (1496). Sota els mateixos monarques que Aragó des del 1479, però mai incorporada a la Corona d'Aragó.", note_es:"Darrera illa canària conquerida (1496). Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+,
+ /* --- densificació sol·licitada: Sardenya, Sicília i sud d'Itàlia --- */
+ {n_ca:"Olbia (Terranova)", n_es:"Olbia (Terranova)", ent:"Regne de Sardenya", ys:1324, ye:1516, lat:40.9236, lon:9.4989,
+  note_ca:"Port del nord-est sard, punt de contacte amb Còrsega.", note_es:"Puerto del noreste sardo, punto de contacto con Córcega."},
+ {n_ca:"Olbia (Terranova) (Monarquia Hispànica)", n_es:"Olbia (Terranova) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.9236, lon:9.4989,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Tempio Pausania", n_es:"Tempio Pausania", ent:"Regne de Sardenya", ys:1420, ye:1516, lat:40.9014, lon:9.1006,
+  note_ca:"Centre de la Gallura interior.", note_es:"Centro de la Gallura interior."},
+ {n_ca:"Tempio Pausania (Monarquia Hispànica)", n_es:"Tempio Pausania (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.9014, lon:9.1006,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Macomer", n_es:"Macomer", ent:"Regne de Sardenya", ys:1420, ye:1516, lat:40.2667, lon:8.7667,
+  note_ca:"Node central entre Logudoro i Barbagia.", note_es:"Nodo central entre Logudoro y Barbagia."},
+ {n_ca:"Macomer (Monarquia Hispànica)", n_es:"Macomer (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.2667, lon:8.7667,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ghilarza", n_es:"Ghilarza", ent:"Regne de Sardenya", ys:1420, ye:1516, lat:40.1167, lon:8.8333,
+  note_ca:"Vila de la conca d'Arborea.", note_es:"Villa de la cuenca de Arborea."},
+ {n_ca:"Ghilarza (Monarquia Hispànica)", n_es:"Ghilarza (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.1167, lon:8.8333,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Villacidro", n_es:"Villacidro", ent:"Regne de Sardenya", ys:1324, ye:1516, lat:39.4553, lon:8.7422,
+  note_ca:"Vila del Campidano meridional.", note_es:"Villa del Campidano meridional."},
+ {n_ca:"Villacidro (Monarquia Hispànica)", n_es:"Villacidro (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:39.4553, lon:8.7422,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sanluri (vila)", n_es:"Sanluri (villa)", ent:"Regne de Sardenya", ys:1409, ye:1516, lat:39.5667, lon:8.9,
+  note_ca:"Vila coneguda per la batalla decisiva de 1409.", note_es:"Villa conocida por la batalla decisiva de 1409."},
+ {n_ca:"Sanluri (vila) (Monarquia Hispànica)", n_es:"Sanluri (villa) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:39.5667, lon:8.9,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Quartu Sant'Elena", n_es:"Quartu Sant'Elena", ent:"Regne de Sardenya", ys:1324, ye:1516, lat:39.2358, lon:9.1897,
+  note_ca:"Vila propera a Càller.", note_es:"Villa cercana a Cagliari."},
+ {n_ca:"Quartu Sant'Elena (Monarquia Hispànica)", n_es:"Quartu Sant'Elena (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:39.2358, lon:9.1897,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Porto Torres", n_es:"Porto Torres", ent:"Regne de Sardenya", ys:1323, ye:1516, lat:40.8394, lon:8.4025,
+  note_ca:"Antic port romà, porta d'entrada al Logudoro.", note_es:"Antiguo puerto romano, puerta de entrada al Logudoro."},
+ {n_ca:"Porto Torres (Monarquia Hispànica)", n_es:"Porto Torres (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1720, lat:40.8394, lon:8.4025,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ragusa", n_es:"Ragusa", ent:"Regne de Sicília", ys:1282, ye:1516, lat:36.9257, lon:14.7225,
+  note_ca:"Ciutat de l'altiplà del sud-est sicilià.", note_es:"Ciudad del altiplano del sureste siciliano."},
+ {n_ca:"Ragusa (Monarquia Hispànica)", n_es:"Ragusa (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:36.9257, lon:14.7225,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Mòdica", n_es:"Módica", ent:"Regne de Sicília", ys:1282, ye:1516, lat:36.8471, lon:14.7695,
+  note_ca:"Antiga comtat de la Sicília sud-oriental.", note_es:"Antiguo condado de la Sicilia suroriental."},
+ {n_ca:"Mòdica (Monarquia Hispànica)", n_es:"Módica (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:36.8471, lon:14.7695,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Noto", n_es:"Noto", ent:"Regne de Sicília", ys:1282, ye:1516, lat:36.8909, lon:15.0708,
+  note_ca:"Ciutat de l'antiga Sicília, refundada després del terratrèmol de 1693.", note_es:"Ciudad de la antigua Sicilia, refundada tras el terremoto de 1693."},
+ {n_ca:"Noto (Monarquia Hispànica)", n_es:"Noto (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:36.8909, lon:15.0708,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Taormina", n_es:"Taormina", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.8525, lon:15.2891,
+  note_ca:"Ciutat costanera de l'orient sicilià.", note_es:"Ciudad costera del oriente siciliano."},
+ {n_ca:"Taormina (Monarquia Hispànica)", n_es:"Taormina (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.8525, lon:15.2891,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Milazzo", n_es:"Milazzo", ent:"Regne de Sicília", ys:1282, ye:1516, lat:38.2206, lon:15.24,
+  note_ca:"Port clau de l'estret sicilià.", note_es:"Puerto clave del estrecho siciliano."},
+ {n_ca:"Milazzo (Monarquia Hispànica)", n_es:"Milazzo (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:38.2206, lon:15.24,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Termini Imerese", n_es:"Termini Imerese", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.9847, lon:13.6975,
+  note_ca:"Ciutat termal a prop de Palerm.", note_es:"Ciudad termal cerca de Palermo."},
+ {n_ca:"Termini Imerese (Monarquia Hispànica)", n_es:"Termini Imerese (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.9847, lon:13.6975,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sciacca", n_es:"Sciacca", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.5064, lon:13.0886,
+  note_ca:"Port meridional sicilià, famós per les termes.", note_es:"Puerto meridional siciliano, famoso por sus termas."},
+ {n_ca:"Sciacca (Monarquia Hispànica)", n_es:"Sciacca (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.5064, lon:13.0886,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Piazza Armerina", n_es:"Piazza Armerina", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.3839, lon:14.3645,
+  note_ca:"Centre de l'interior sicilià.", note_es:"Centro del interior siciliano."},
+ {n_ca:"Piazza Armerina (Monarquia Hispànica)", n_es:"Piazza Armerina (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.3839, lon:14.3645,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Lentini", n_es:"Lentini", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.2861, lon:15.0011,
+  note_ca:"Antiga ciutat grega de la plana de Catània.", note_es:"Antigua ciudad griega de la llanura de Catania."},
+ {n_ca:"Lentini (Monarquia Hispànica)", n_es:"Lentini (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.2861, lon:15.0011,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Corleone", n_es:"Corleone", ent:"Regne de Sicília", ys:1282, ye:1516, lat:37.8144, lon:13.3011,
+  note_ca:"Vila de l'interior palermità.", note_es:"Villa del interior palermitano."},
+ {n_ca:"Corleone (Monarquia Hispànica)", n_es:"Corleone (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1713, lat:37.8144, lon:13.3011,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Brindisi", n_es:"Brindisi", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.632, lon:17.937,
+  note_ca:"Gran port de la Pulla, punt d'embarcament cap a Orient.", note_es:"Gran puerto de Apulia, punto de embarque hacia Oriente."},
+ {n_ca:"Brindisi (Monarquia Hispànica)", n_es:"Brindisi (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.632, lon:17.937,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Barletta", n_es:"Barletta", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.3181, lon:16.2803,
+  note_ca:"Port clau de la Pulla septentrional.", note_es:"Puerto clave de la Apulia septentrional."},
+ {n_ca:"Barletta (Monarquia Hispànica)", n_es:"Barletta (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.3181, lon:16.2803,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Trani", n_es:"Trani", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.2753, lon:16.4192,
+  note_ca:"Port medieval de la Pulla amb catedral romànica.", note_es:"Puerto medieval de Apulia con catedral románica."},
+ {n_ca:"Trani (Monarquia Hispànica)", n_es:"Trani (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.2753, lon:16.4192,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Andria", n_es:"Andria", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.2306, lon:16.2989,
+  note_ca:"Ciutat de les Murge, prop del Castel del Monte.", note_es:"Ciudad de las Murge, cerca del Castel del Monte."},
+ {n_ca:"Andria (Monarquia Hispànica)", n_es:"Andria (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.2306, lon:16.2989,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Manfredonia", n_es:"Manfredonia", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.6297, lon:15.9139,
+  note_ca:"Port fundat pel rei Manfred de Sicília.", note_es:"Puerto fundado por el rey Manfredo de Sicilia."},
+ {n_ca:"Manfredonia (Monarquia Hispànica)", n_es:"Manfredonia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.6297, lon:15.9139,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Isernia", n_es:"Isernia", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.5967, lon:14.2333,
+  note_ca:"Ciutat del Molise interior.", note_es:"Ciudad del Molise interior."},
+ {n_ca:"Isernia (Monarquia Hispànica)", n_es:"Isernia (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.5967, lon:14.2333,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sulmona", n_es:"Sulmona", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:42.05, lon:13.9333,
+  note_ca:"Ciutat abrucesa, ciutat natal d'Ovidi.", note_es:"Ciudad abrucesa, ciudad natal de Ovidio."},
+ {n_ca:"Sulmona (Monarquia Hispànica)", n_es:"Sulmona (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:42.05, lon:13.9333,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Teramo", n_es:"Teramo", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:42.6589, lon:13.7042,
+  note_ca:"Capital de l'Abruç septentrional.", note_es:"Capital del Abruzo septentrional."},
+ {n_ca:"Teramo (Monarquia Hispànica)", n_es:"Teramo (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:42.6589, lon:13.7042,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Pescara", n_es:"Pescara", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:42.4643, lon:14.2142,
+  note_ca:"Port de l'Adriàtic abrucès.", note_es:"Puerto del Adriático abrucés."},
+ {n_ca:"Pescara (Monarquia Hispànica)", n_es:"Pescara (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:42.4643, lon:14.2142,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Nola", n_es:"Nola", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.9264, lon:14.5378,
+  note_ca:"Ciutat de la Campània interior.", note_es:"Ciudad de la Campania interior."},
+ {n_ca:"Nola (Monarquia Hispànica)", n_es:"Nola (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.9264, lon:14.5378,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sorrento", n_es:"Sorrento", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.6263, lon:14.3757,
+  note_ca:"Península i port del golf de Nàpols.", note_es:"Península y puerto del golfo de Nápoles."},
+ {n_ca:"Sorrento (Monarquia Hispànica)", n_es:"Sorrento (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.6263, lon:14.3757,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Matera", n_es:"Matera", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.6664, lon:16.6043,
+  note_ca:"Ciutat dels famosos Sassi, a la Basilicata.", note_es:"Ciudad de los famosos Sassi, en la Basilicata."},
+ {n_ca:"Matera (Monarquia Hispànica)", n_es:"Matera (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.6664, lon:16.6043,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Melfi", n_es:"Melfi", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.0031, lon:15.6531,
+  note_ca:"Antiga capital normanda de la Basilicata.", note_es:"Antigua capital normanda de la Basilicata."},
+ {n_ca:"Melfi (Monarquia Hispànica)", n_es:"Melfi (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.0031, lon:15.6531,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+,
+ /* --- ulteriore densificació del sud d'Itàlia (Pulla, Molise, Basilicata, Calàbria) --- */
+ {n_ca:"Benevento (regne, no papal)", n_es:"Benevento (reino, no papal)", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.13, lon:14.78,
+  note_ca:"Territoris del regne al voltant de l'enclavament papal.", note_es:"Territorios del reino alrededor del enclave papal."},
+ {n_ca:"Benevento (regne, no papal) (Monarquia Hispànica)", n_es:"Benevento (reino, no papal) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.13, lon:14.78,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Foggia (Capitanata)", n_es:"Foggia (Capitanata)", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.4621, lon:15.5444,
+  note_ca:"Centre administratiu de la Dogana delle pecore, gran negoci ramader reial.", note_es:"Centro administrativo de la Dogana delle pecore, gran negocio ganadero real."},
+ {n_ca:"Foggia (Capitanata) (Monarquia Hispànica)", n_es:"Foggia (Capitanata) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.4621, lon:15.5444,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Altamura", n_es:"Altamura", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.8267, lon:16.5533,
+  note_ca:"Ciutat de les Murge pugliese.", note_es:"Ciudad de las Murge pugliesas."},
+ {n_ca:"Altamura (Monarquia Hispànica)", n_es:"Altamura (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.8267, lon:16.5533,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Bitonto", n_es:"Bitonto", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.1075, lon:16.6928,
+  note_ca:"Ciutat oliera de la Pulla central.", note_es:"Ciudad olivarera de la Apulia central."},
+ {n_ca:"Bitonto (Monarquia Hispànica)", n_es:"Bitonto (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.1075, lon:16.6928,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ostuni", n_es:"Ostuni", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.7304, lon:17.5794,
+  note_ca:"La 'ciutat blanca' de la Pulla meridional.", note_es:"La 'ciudad blanca' de la Apulia meridional."},
+ {n_ca:"Ostuni (Monarquia Hispànica)", n_es:"Ostuni (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.7304, lon:17.5794,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Gallipoli (Pulla)", n_es:"Gallipoli (Apulia)", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.0559, lon:17.9925,
+  note_ca:"Port de la Pulla meridional, important centre de l'oli.", note_es:"Puerto de la Apulia meridional, importante centro del aceite."},
+ {n_ca:"Gallipoli (Pulla) (Monarquia Hispànica)", n_es:"Gallipoli (Apulia) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.0559, lon:17.9925,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Otranto", n_es:"Otranto", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.1497, lon:18.4897,
+  note_ca:"Extrem oriental d'Itàlia, envaïda pels otomans el 1480.", note_es:"Extremo oriental de Italia, invadida por los otomanos en 1480."},
+ {n_ca:"Otranto (Monarquia Hispànica)", n_es:"Otranto (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.1497, lon:18.4897,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Avellino (comarca)", n_es:"Avellino (comarca)", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.95, lon:14.85,
+  note_ca:"Irpínia, zona interior campana.", note_es:"Irpinia, zona interior campana."},
+ {n_ca:"Avellino (comarca) (Monarquia Hispànica)", n_es:"Avellino (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.95, lon:14.85,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Benevento nord (Molise)", n_es:"Benevento norte (Molise)", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.35, lon:14.55,
+  note_ca:"Frontera septentrional del regne amb els Estats Pontificis.", note_es:"Frontera septentrional del reino con los Estados Pontificios."},
+ {n_ca:"Benevento nord (Molise) (Monarquia Hispànica)", n_es:"Benevento norte (Molise) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.35, lon:14.55,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Vasto", n_es:"Vasto", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:42.1119, lon:14.7075,
+  note_ca:"Port abrucès de l'Adriàtic.", note_es:"Puerto abrucés del Adriático."},
+ {n_ca:"Vasto (Monarquia Hispànica)", n_es:"Vasto (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:42.1119, lon:14.7075,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Lanciano", n_es:"Lanciano", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:42.2306, lon:14.3889,
+  note_ca:"Gran fira comercial medieval de l'Abruç.", note_es:"Gran feria comercial medieval del Abruzo."},
+ {n_ca:"Lanciano (Monarquia Hispànica)", n_es:"Lanciano (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:42.2306, lon:14.3889,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Larino", n_es:"Larino", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:41.8014, lon:14.9114,
+  note_ca:"Ciutat episcopal del Molise.", note_es:"Ciudad episcopal del Molise."},
+ {n_ca:"Larino (Monarquia Hispànica)", n_es:"Larino (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:41.8014, lon:14.9114,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Venosa", n_es:"Venosa", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.9647, lon:15.8144,
+  note_ca:"Ciutat natal d'Horaci, a la Basilicata.", note_es:"Ciudad natal de Horacio, en la Basilicata."},
+ {n_ca:"Venosa (Monarquia Hispànica)", n_es:"Venosa (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.9647, lon:15.8144,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Policoro", n_es:"Policoro", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:40.2119, lon:16.6656,
+  note_ca:"Costa jónica de la Basilicata.", note_es:"Costa jónica de la Basilicata."},
+ {n_ca:"Policoro (Monarquia Hispànica)", n_es:"Policoro (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:40.2119, lon:16.6656,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Castrovillari", n_es:"Castrovillari", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:39.8125, lon:16.2039,
+  note_ca:"Nord de la Calàbria Citerior.", note_es:"Norte de la Calabria Citerior."},
+ {n_ca:"Castrovillari (Monarquia Hispànica)", n_es:"Castrovillari (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:39.8125, lon:16.2039,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Rossano", n_es:"Rossano", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:39.5761, lon:16.6356,
+  note_ca:"Costa jónica calabresa.", note_es:"Costa jónica calabresa."},
+ {n_ca:"Rossano (Monarquia Hispànica)", n_es:"Rossano (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:39.5761, lon:16.6356,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Locri", n_es:"Locri", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:38.2394, lon:16.2622,
+  note_ca:"Costa jónica de la Calàbria Ulterior.", note_es:"Costa jónica de la Calabria Ulterior."},
+ {n_ca:"Locri (Monarquia Hispànica)", n_es:"Locri (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:38.2394, lon:16.2622,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Palmi", n_es:"Palmi", ent:"Regne de Nàpols", ys:1442, ye:1516, lat:38.3592, lon:15.85,
+  note_ca:"Costa tirrena de la Calàbria Ulterior.", note_es:"Costa tirrena de la Calabria Ulterior."},
+ {n_ca:"Palmi (Monarquia Hispànica)", n_es:"Palmi (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1714, lat:38.3592, lon:15.85,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+,
+ /* --- mes densificacio de Castella (unio personal), sollicitat per l'usuari --- */
+ {n_ca:"Aranda de Duero", n_es:"Aranda de Duero", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.6714, lon:-3.6892,
+  note_ca:"Vila del Duero, Castella la Vella. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila del Duero, Castella la Vella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Medina del Campo", n_es:"Medina del Campo", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.3081, lon:-4.9147,
+  note_ca:"Gran fira comercial i financera de Castella. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Gran fira comercial i financera de Castella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Toro", n_es:"Toro", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.525, lon:-5.3961,
+  note_ca:"Ciutat del Duero, escenari de batalles successories. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat del Duero, escenari de batalles successories. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Peñafiel", n_es:"Peñafiel", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.5967, lon:-4.1167,
+  note_ca:"Vila vinicola de la Ribera del Duero. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila vinicola de la Ribera del Duero. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Sepúlveda", n_es:"Sepúlveda", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.2986, lon:-3.7458,
+  note_ca:"Vila emmurallada de Segovia. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila emmurallada de Segovia. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Tordesillas", n_es:"Tordesillas", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.5017, lon:-5.0006,
+  note_ca:"Ciutat on Isabel signa testaments i on Colom hi negocia el tractat de 1494. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat on Isabel signa testaments i on Colom hi negocia el tractat de 1494. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Almagro", n_es:"Almagro", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.8944, lon:-3.7222,
+  note_ca:"Capital de l ordre de Calatrava a la Manxa. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Capital de l ordre de Calatrava a la Manxa. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Talavera de la Reina", n_es:"Talavera de la Reina", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.9634, lon:-4.83,
+  note_ca:"Ciutat ceramica del Tajo. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat ceramica del Tajo. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Illescas", n_es:"Illescas", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:40.1197, lon:-3.8478,
+  note_ca:"Vila entre Toledo i Madrid. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila entre Toledo i Madrid. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Ocaña", n_es:"Ocaña", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.9581, lon:-3.4989,
+  note_ca:"Vila de la Manxa toledana. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila de la Manxa toledana. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Baeza", n_es:"Baeza", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.9942, lon:-3.4711,
+  note_ca:"Ciutat renaixentista de Jaen. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat renaixentista de Jaen. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Úbeda", n_es:"Úbeda", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.0139, lon:-3.3706,
+  note_ca:"Ciutat renaixentista de Jaen, bessona de Baeza. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat renaixentista de Jaen, bessona de Baeza. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Ronda", n_es:"Ronda", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.7461, lon:-5.1667,
+  note_ca:"Ciutat de la serralada malaguenya. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat de la serralada malaguenya. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Antequera", n_es:"Antequera", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.0184, lon:-4.561,
+  note_ca:"Cor d Andalusia, conquerida el 1410. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Cor d Andalusia, conquerida el 1410. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Écija", n_es:"Écija", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.5407, lon:-5.0826,
+  note_ca:"Ciutat del Genil. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat del Genil. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Osuna", n_es:"Osuna", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.2373, lon:-5.1049,
+  note_ca:"Ciutat ducal de la Sevilla interior. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat ducal de la Sevilla interior. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Carmona", n_es:"Carmona", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.4714, lon:-5.6428,
+  note_ca:"Antiga ciutat de la Vega del Guadalquivir. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Antiga ciutat de la Vega del Guadalquivir. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Jerez de la Frontera", n_es:"Jerez de la Frontera", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.685, lon:-6.1261,
+  note_ca:"Ciutat del vi de Xerès. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat del vi de Xerès. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Sanlúcar de Barrameda", n_es:"Sanlúcar de Barrameda", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.7783, lon:-6.3531,
+  note_ca:"Port a la desembocadura del Guadalquivir. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Port a la desembocadura del Guadalquivir. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Marbella", n_es:"Marbella", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:36.5108, lon:-4.885,
+  note_ca:"Ciutat costanera malaguenya. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat costanera malaguenya. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Zafra", n_es:"Zafra", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.4181, lon:-6.4197,
+  note_ca:"Vila mercantil d Extremadura. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila mercantil d Extremadura. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Llerena", n_es:"Llerena", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.2372, lon:-6.0472,
+  note_ca:"Seu de l orde de Sant Jaume a Extremadura. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Seu de l orde de Sant Jaume a Extremadura. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Alcántara", n_es:"Alcántara", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.7189, lon:-6.8797,
+  note_ca:"Ciutat del pont roma, seu de l orde d Alcantara. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat del pont roma, seu de l orde d Alcantara. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Coria", n_es:"Coria", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:39.9847, lon:-6.535,
+  note_ca:"Antiga ciutat episcopal d Extremadura. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Antiga ciutat episcopal d Extremadura. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Cartagena (castellana)", n_es:"Cartagena (castellana)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:37.605, lon:-0.9864,
+  note_ca:"Gran port murcia, sota Castella des del segle XIII. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Gran port murcia, sota Castella des del segle XIII. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Cieza", n_es:"Cieza", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:38.2394, lon:-1.4192,
+  note_ca:"Vila de la vall del Segura. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila de la vall del Segura. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Logronyo", n_es:"Logroño", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.465, lon:-2.4456,
+  note_ca:"Capital de La Rioja, sota Castella. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Capital de La Rioja, sota Castella. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"La Laguna (Tenerife)", n_es:"La Laguna (Tenerife)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:28.4874, lon:-16.3156,
+  note_ca:"Primera capital de Tenerife despres de la conquesta. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Primera capital de Tenerife despres de la conquesta. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Ponferrada", n_es:"Ponferrada", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.5461, lon:-6.5964,
+  note_ca:"Ciutat del Bierzo lleones. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat del Bierzo lleones. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+ {n_ca:"Benavente", n_es:"Benavente", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:42.0, lon:-5.6797,
+  note_ca:"Vila de la Terra de Campos. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila de la Terra de Campos. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+,
+ /* --- Portugal durant l'Unio Iberica (1580-1640), mateixa logica de 'possessio personal' que Castella --- */
+ {n_ca:"Lisboa", n_es:"Lisboa", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.7223, lon:-9.1393,
+  note_ca:"Capital del regne, gran port atlàntic de l imperi portugues. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Capital del regne, gran port atlàntic de l imperi portugues. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Porto", n_es:"Oporto", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:41.1579, lon:-8.6291,
+  note_ca:"Segona ciutat del regne, al nord del Douro. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Segona ciutat del regne, al nord del Douro. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Coimbra", n_es:"Coimbra", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:40.2033, lon:-8.4103,
+  note_ca:"Antiga capital i seu universitaria. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Antiga capital i seu universitaria. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Évora", n_es:"Évora", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.5667, lon:-7.9,
+  note_ca:"Ciutat de l Alentejo, residencia reial habitual. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Ciutat de l Alentejo, residencia reial habitual. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Braga", n_es:"Braga", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:41.5454, lon:-8.4265,
+  note_ca:"Antiga capital eclesiastica de Portugal. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Antiga capital eclesiastica de Portugal. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Faro", n_es:"Faro", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:37.0194, lon:-7.9322,
+  note_ca:"Capital de l Algarve. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Capital de l Algarve. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Setúbal", n_es:"Setúbal", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.5244, lon:-8.8882,
+  note_ca:"Port al sud de Lisboa. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Port al sud de Lisboa. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Guimarães", n_es:"Guimarães", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:41.4425, lon:-8.2918,
+  note_ca:"Bressol de la nacionalitat portuguesa. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Bressol de la nacionalitat portuguesa. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Viseu", n_es:"Viseu", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:40.6566, lon:-7.9122,
+  note_ca:"Ciutat de la Beira interior. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Ciutat de la Beira interior. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Aveiro", n_es:"Aveiro", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:40.6443, lon:-8.6455,
+  note_ca:"Port de la ria, al centre del pais. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Port de la ria, al centre del pais. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Elvas", n_es:"Elvas", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.8814, lon:-7.1625,
+  note_ca:"Plaça fronterera amb Castella, gran fortalesa. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Plaça fronterera amb Castella, gran fortalesa. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Beja", n_es:"Beja", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.015, lon:-7.8632,
+  note_ca:"Capital del Baix Alentejo. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Capital del Baix Alentejo. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Leiria", n_es:"Leiria", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:39.7436, lon:-8.8071,
+  note_ca:"Ciutat de l Estremadura portuguesa. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Ciutat de l Estremadura portuguesa. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Santarém", n_es:"Santarém", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:39.2362, lon:-8.6857,
+  note_ca:"Ciutat del Tejo, antiga capital medieval. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Ciutat del Tejo, antiga capital medieval. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Tavira", n_es:"Tavira", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:37.1264, lon:-7.6494,
+  note_ca:"Port de l Algarve oriental. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Port de l Algarve oriental. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Lagos", n_es:"Lagos", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:37.1021, lon:-8.6743,
+  note_ca:"Port de l Algarve occidental, base de les expedicions atlantiques. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Port de l Algarve occidental, base de les expedicions atlantiques. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Bragança", n_es:"Bragança", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:41.8064, lon:-6.7567,
+  note_ca:"Ciutat de Tras-os-Montes, bressol de la dinastia reial. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Ciutat de Tras-os-Montes, bressol de la dinastia reial. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Angra do Heroísmo (Açores)", n_es:"Angra do Heroísmo (Azores)", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.6553, lon:-27.22,
+  note_ca:"Capital de les Açores, punt clau de les rutes atlantiques. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Capital de les Açores, punt clau de les rutes atlantiques. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
+ {n_ca:"Funchal (Madeira)", n_es:"Funchal (Madeira)", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:32.6669, lon:-16.9241,
+  note_ca:"Capital de l illa de Madeira. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640), pero mai incorporat a la Corona d'Aragó.", note_es:"Capital de l illa de Madeira. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640), pero nunca incorporado a la Corona de Aragón."},
 ];
 
 const BATALLES = [
@@ -1157,16 +1708,26 @@ const BATALLES = [
   res_ca:"Roger de Llúria derrota la flota angevina.", res_es:"Roger de Lauria derrota a la flota angevina."},
  {n_ca:"Batalla del Cefís", n_es:"Batalla del Cefiso", ys:1311, lat:38.35, lon:23.25, kind:"battle", out:"won",
   res_ca:"Victòria almogàver; conquesta del Ducat d'Atenes.", res_es:"Victoria almogávar; conquista del Ducado de Atenas."},
+ {n_ca:"Setge de Villa di Chiesa (Iglésies)", n_es:"Sitio de Villa di Chiesa (Iglesias)", ys:1323, lat:39.3086, lon:8.5364, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Setge de set mesos a la principal vila minera pisana; capitula el 7 de febrer de 1324 per fam.", res_es:"Sitio de siete meses a la principal villa minera pisana; capitula el 7 de febrero de 1324 por hambre."},
+ {n_ca:"Batalla de Lucocisterna (contra Pisa)", n_es:"Batalla de Lucocisterna (contra Pisa)", ys:1324, lat:39.25, lon:9.05, kind:"battle", out:"won",
+  res_ca:"Victòria aragonesa decisiva sobre l'exèrcit pisà prop de l'actual Elmas, el 29 de febrer de 1324; el mateix dia la flota pisana també és derrotada davant Càller.", res_es:"Victoria aragonesa decisiva sobre el ejército pisano cerca de la actual Elmas, el 29 de febrero de 1324; el mismo día la flota pisana también es derrotada frente a Cagliari."},
+ {n_ca:"Batalla naval del golf de Càller", n_es:"Batalla naval del golfo de Cagliari", ys:1324, lat:39.15, lon:9.15, kind:"battle", out:"won",
+  res_ca:"Francesc Carròs derrota una flota pisano-genovesa el 29 de desembre; 800 mariners morts i 600 capturats.", res_es:"Francesc Carròs derrota una flota pisano-genovesa el 29 de diciembre; 800 marineros muertos y 600 capturados."},
+ {n_ca:"Ofensiva d'Arborea sota Marià IV", n_es:"Ofensiva de Arborea bajo Mariano IV", ys:1368, lat:39.9, lon:8.6, kind:"revolt", out:"lost",
+  res_ca:"Arborea trenca l'aliança amb la Corona i gairebé l'expulsa de l'illa, reduint el 'Regne de Sardenya' només a Càller i l'Alguer.", res_es:"Arborea rompe la alianza con la Corona y casi la expulsa de la isla, reduciendo el 'Reino de Cerdeña' solo a Cagliari y Alguer."},
+ {n_ca:"Segona ofensiva d'Arborea (Brancaleone Doria)", n_es:"Segunda ofensiva de Arborea (Brancaleone Doria)", ys:1391, lat:39.9, lon:8.6, kind:"revolt", out:"lost",
+  res_ca:"Nova ofensiva arborenca que torna a escombrar la major part de l'illa cap al domini d'Arborea.", res_es:"Nueva ofensiva arborense que vuelve a barrer la mayor parte de la isla hacia el dominio de Arborea."},
  {n_ca:"Assassinat de Roger de Flor", n_es:"Asesinato de Roger de Flor", ys:1305, lat:40.9833, lon:27.5167, kind:"revolt", out:"lost",
   res_ca:"Emboscada bizantina a Adrianòpolis; desencadena la venjança catalana.", res_es:"Emboscada bizantina en Adrianópolis; desencadena la venganza catalana."},
  {n_ca:"Setge de Càller (Càlaris)", n_es:"Sitio de Cagliari", ys:1324, lat:39.2238, lon:9.1217, kind:"siege", dir:"imposed", out:"won",
   res_ca:"Conquesta de la principal plaça pisana a Sardenya.", res_es:"Conquista de la principal plaza pisana en Cerdeña."},
  {n_ca:"Pèrdua de Livàdia i Salona davant els turcs", n_es:"Pérdida de Livadia y Salona ante los turcos", ys:1394, lat:38.4333, lon:22.8833, kind:"siege", dir:"suffered", out:"lost",
   res_ca:"Fi del domini català continental a Grècia; només resten Egina i Piada.", res_es:"Fin del dominio catalán continental en Grecia; solo quedan Egina y Piada."},
- {n_ca:"Batalla de Lucocisterna", n_es:"Batalla de Lucocisterna", ys:1409, lat:39.35, lon:9.0, kind:"battle", out:"won",
-  res_ca:"Coneguda també com a batalla de Sanluri; derrota decisiva del Jutjat d'Arborea.", res_es:"Conocida también como batalla de Sanluri; derrota decisiva del Judicado de Arborea."},
- {n_ca:"Dedicació de les ciutats sardes (fi de la resistència)", n_es:"Dedicación de las ciudades sardas (fin de la resistencia)", ys:1420, lat:40.7259, lon:8.5557, kind:"dedication", out:"won",
-  res_ca:"Pacificació negociada de bona part de l'illa.", res_es:"Pacificación negociada de buena parte de la isla."},
+ {n_ca:"Batalla de Sanluri", n_es:"Batalla de Sanluri", ys:1409, lat:39.35, lon:9.0, kind:"battle", out:"won",
+  res_ca:"Derrota decisiva del Jutjat d'Arborea, batalla diferent i posterior (85 anys) a la de Lucocisterna (1324) contra Pisa.", res_es:"Derrota decisiva del Judicado de Arborea, batalla diferente y posterior (85 años) a la de Lucocisterna (1324) contra Pisa."},
+ {n_ca:"Compra de Sardenya al Jutjat d'Arborea", n_es:"Compra de Cerdeña al Judicado de Arborea", ys:1420, lat:40.7259, lon:8.5557, kind:"dedication", out:"won",
+  res_ca:"La Corona compra els territoris restants d'Arborea per 100.000 florins d'or, més que no pas els conquereix militarment; Castellsard (en mans dels Doria) no s'incorpora fins al 1448.", res_es:"La Corona compra los territorios restantes de Arborea por 100.000 florines de oro, más que conquistarlos militarmente; Castelsardo (en manos de los Doria) no se incorpora hasta 1448."},
  {n_ca:"Batalla de Ponza", n_es:"Batalla de Ponza", ys:1435, lat:40.9, lon:12.95, kind:"battle", out:"lost",
   res_ca:"Derrota naval; Alfons el Magnànim capturat pels genovesos i lliurat a Milà.", res_es:"Derrota naval; Alfonso el Magnánimo capturado por los genoveses y entregado a Milán."},
  {n_ca:"Setge de Nàpols", n_es:"Sitio de Nápoles", ys:1442, lat:40.8518, lon:14.2681, kind:"siege", dir:"imposed", out:"won",
@@ -1255,6 +1816,92 @@ const BATALLES = [
   res_ca:"La noblesa aragonesa es nega a 'passar el mar' per a les campanyes mediterrànies i obté d'Alfons III el Privilegi de la Unió, limitant el poder reial.", res_es:"La nobleza aragonesa se niega a 'pasar el mar' para las campañas mediterráneas y obtiene de Alfonso III el Privilegio de la Unión, limitando el poder real."},
  {n_ca:"Coronació de Pere II a Roma", n_es:"Coronación de Pedro II en Roma", ys:1204, lat:41.9028, lon:12.4964, kind:"dedication", out:"won",
   res_ca:"Pere el Catòlic es fa coronar personalment pel papa Innocenci III, un honor excepcional entre els monarques peninsulars del moment.", res_es:"Pedro el Católico se hace coronar personalmente por el papa Inocencio III, un honor excepcional entre los monarcas peninsulares del momento."},
+,
+ /* --- Condados Catalanes (font: Neoptolemoblog) --- */
+ {n_ca:"Batalla de Roncesvalls", n_es:"Batalla de Roncesvalles", ys:778, lat:43.0089, lon:-1.3197, kind:"battle", out:"lost",
+  res_ca:"Emboscada basco-musulmana contra la reraguarda de Carlemany en retirada; precedent llegendari (Cançó de Rotllan) de la futura Marca Hispànica.", res_es:"Emboscada vasco-musulmana contra la retaguardia de Carlomagno en retirada; precedente legendario (Cantar de Roldán) de la futura Marca Hispánica."},
+ {n_ca:"Saqueig de Barcelona per Almansor", n_es:"Saqueo de Barcelona por Almanzor", ys:985, lat:41.3873, lon:2.1686, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Al-Mansur devasta Barcelona; Borrell II demana ajut militar als francs, que no arriba, precipitant la ruptura del vassallatge el 988.", res_es:"Almanzor devasta Barcelona; Borrell II pide ayuda militar a los francos, que no llega, precipitando la ruptura del vasallaje en 988."},
+ {n_ca:"Mort de Ramon Berenguer II 'el Fratricida'", n_es:"Muerte de Ramón Berenguer II 'el Fratricida'", ys:1082, lat:41.3873, lon:2.1686, kind:"revolt", out:"uncertain",
+  res_ca:"Ramon Berenguer II mor apunyalat en un barranc de Barcelona durant el condomini amb el seu germà Berenguer Ramon II, sospitós de l'assassinat; el 1096 un judici de Déu (duel judicial) el declara culpable i marxa a l'exili a Terra Santa.", res_es:"Ramón Berenguer II muere apuñalado en un barranco de Barcelona durante el condominio con su hermano Berenguer Ramón II, sospechoso del asesinato; en 1096 un juicio de Dios (duelo judicial) lo declara culpable y marcha al exilio a Tierra Santa."},
+ {n_ca:"Pere de Portugal, 'rei dels catalans'", n_es:"Pedro de Portugal, 'rey de los catalanes'", ys:1463, lat:41.3873, lon:2.1686, kind:"revolt", out:"lost",
+  res_ca:"Durant la guerra civil, la Generalitat proclama rei el conestable Pere de Portugal en substitució de Joan II, que té vetada l'entrada a Catalunya.", res_es:"Durante la guerra civil, la Generalitat proclama rey al condestable Pedro de Portugal en sustitución de Juan II, que tiene vetada la entrada en Cataluña."},
+ {n_ca:"Renat d'Anjou, rei dels catalans", n_es:"Renato de Anjou, rey de los catalanes", ys:1466, lat:41.3873, lon:2.1686, kind:"revolt", out:"lost",
+  res_ca:"A la mort de Pere de Portugal, la Generalitat ofereix la corona a Renat d'Anjou, tornant a posar Catalunya sota un pretendent francès.", res_es:"A la muerte de Pedro de Portugal, la Generalitat ofrece la corona a Renato de Anjou, volviendo a poner Cataluña bajo un pretendiente francés."},
+ {n_ca:"Pau de Pedralbes", n_es:"Paz de Pedralbes", ys:1472, lat:41.3953, lon:2.1136, kind:"dedication", out:"won",
+  res_ca:"Joan II recupera el tron català comprometent-se a respectar institucions i privilegis, restaurant les condicions de la Concòrdia de Vilafranca (1461).", res_es:"Juan II recupera el trono catalán comprometiéndose a respetar instituciones y privilegios, restaurando las condiciones de la Concordia de Vilafranca (1461)."},
+,
+ /* --- Reyes y Dinastías: episodis addicionals dels comtats catalans (segles X-XII) --- */
+ {n_ca:"Batalla d'El Vacar i saqueig de Còrdova", n_es:"Batalla de El Vacar y saqueo de Córdoba", ys:1010, lat:37.9, lon:-4.75, kind:"battle", out:"uncertain",
+  res_ca:"Ramon Borrell i Ermengol I d'Urgell, aliats amb musulmans rebels, derroten el califa a El Vacar (22 maig) i saquegen Còrdova, però són derrotats al Guadiaro (21 juny); Ermengol mor de les ferides.", res_es:"Ramón Borrell y Ermengol I de Urgel, aliados con musulmanes rebeldes, derrotan al califa en El Vacar (22 mayo) y saquean Córdoba, pero son derrotados en el Guadiaro (21 junio); Ermengol muere de las heridas."},
+ {n_ca:"Primera conquesta (efímera) de Mallorca i Eivissa", n_es:"Primera conquista (efímera) de Mallorca e Ibiza", ys:1114, lat:39.5696, lon:2.6502, kind:"siege", dir:"imposed", out:"uncertain",
+  res_ca:"Ramon Berenguer III lidera una croada catalano-pisana que conquereix Eivissa (agost 1114) i Mallorca (abril 1115), però l'illa és reconquerida pels almoràvits ja el 1116: caldrà esperar Jaume I (1229) per a la conquesta definitiva.", res_es:"Ramón Berenguer III lidera una cruzada catalano-pisana que conquista Ibiza (agosto 1114) y Mallorca (abril 1115), pero la isla es reconquistada por los almorávides ya en 1116: habrá que esperar a Jaime I (1229) para la conquista definitiva."},
+ {n_ca:"Tractat de partició de Provença amb Tolosa", n_es:"Tratado de partición de Provenza con Tolosa", ys:1125, lat:43.9493, lon:4.8055, kind:"dedication", out:"won",
+  res_ca:"Ramon Berenguer III cedeix a Tolosa la Provença entre el Durance i l'Isère; a canvi, Tolosa reconeix els drets de Barcelona sobre la resta de la costa provençal fins al Roine.", res_es:"Ramón Berenguer III cede a Tolosa la Provenza entre el Durance y el Isère; a cambio, Tolosa reconoce los derechos de Barcelona sobre el resto de la costa provenzal hasta el Ródano."},
+,
+ /* --- Guerra de la Quàdruple Aliança (1717-1720): darrer intent espanyol de recuperar Itàlia --- */
+ {n_ca:"Ocupació espanyola de Sardenya", n_es:"Ocupación española de Cerdeña", ys:1717, lat:39.2238, lon:9.1217, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"El cardenal Alberoni, ministre de Felip V, envia una flota que ocupa Sardenya en un intent de recuperar els territoris italians perduts a Utrecht.", res_es:"El cardenal Alberoni, ministro de Felipe V, envía una flota que ocupa Cerdeña en un intento de recuperar los territorios italianos perdidos en Utrecht."},
+ {n_ca:"Ocupació espanyola de Sicília", n_es:"Ocupación española de Sicilia", ys:1718, lat:38.1157, lon:13.3615, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Tropes espanyoles desembarquen i ocupen Sicília, aleshores en mans del Piemont-Savoia des de 1713.", res_es:"Tropas españolas desembarcan y ocupan Sicilia, entonces en manos del Piamonte-Saboya desde 1713."},
+ {n_ca:"Batalla del cap Passaro", n_es:"Batalla del cabo Passaro", ys:1718, lat:36.6833, lon:15.1333, kind:"battle", out:"lost",
+  res_ca:"La flota britànica destrueix l'esquadra espanyola davant Sicília, sense declaració de guerra prèvia; inici efectiu de la Guerra de la Quàdruple Aliança.", res_es:"La flota británica destruye la escuadra española frente a Sicilia, sin declaración de guerra previa; inicio efectivo de la Guerra de la Cuádruple Alianza."},
+ {n_ca:"Tractat de la Haia", n_es:"Tratado de La Haya", ys:1720, lat:52.0705, lon:4.3007, kind:"dedication", out:"lost",
+  res_ca:"Felip V renuncia definitivament a Sardenya i Sicília: Sardenya passa als Savoia (que l'intercanvien per Sicília amb l'Àustria), tancant per sempre l'època italiana de la Corona.", res_es:"Felipe V renuncia definitivamente a Cerdeña y Sicilia: Cerdeña pasa a los Saboya (que la intercambian por Sicilia con Austria), cerrando para siempre la época italiana de la Corona."},
+,
+ /* --- origens dinastics dels Vespres Sicilians (font: De Re Militari) --- */
+ {n_ca:"Matrimoni de Constança d'Aragó amb Frederic II", n_es:"Matrimonio de Constanza de Aragón con Federico II", ys:1209, lat:37.5, lon:14.0, kind:"dedication", out:"won",
+  res_ca:"Primer vincle dinàstic entre la Casa d'Aragó i Sicília, precedent llunyà de la reclamació posterior.", res_es:"Primer vínculo dinástico entre la Casa de Aragón y Sicilia, precedente lejano de la reclamación posterior."},
+ {n_ca:"Matrimoni de Pere (III) amb Constança de Hohenstaufen", n_es:"Matrimonio de Pedro (III) con Constanza de Hohenstaufen", ys:1261, lat:41.3873, lon:2.1686, kind:"dedication", out:"won",
+  res_ca:"Jaume I casa el seu fill Pere amb la filla de Manfred de Sicília, contra l'oposició papal: base dinàstica directa de la futura reclamació catalanoaragonesa sobre Sicília.", res_es:"Jaime I casa a su hijo Pedro con la hija de Manfredo de Sicilia, contra la oposición papal: base dinástica directa de la futura reclamación catalanoaragonesa sobre Sicilia."},
+ {n_ca:"Exigència nobiliària d'expulsar els oficials no aragonesos", n_es:"Exigencia nobiliaria de expulsar a los oficiales no aragoneses", ys:1283, lat:41.6488, lon:-0.8891, kind:"revolt", out:"uncertain",
+  res_ca:"La noblesa aragonesa exigeix la destitució de tots els oficials no nascuts a Aragó, en reacció contra l'ascens de cortesans com Joan de Procida; precedent directe de la futura Unió de 1287.", res_es:"La nobleza aragonesa exige la destitución de todos los oficiales no nacidos en Aragón, en reacción contra el ascenso de cortesanos como Juan de Procida; precedente directo de la futura Unión de 1287."},
+,
+ /* --- episodis addicionals (La Brujula Verde: Desafiament de Bordeus; Penelope/Crawford: Cabrera, Disfida di Barletta) --- */
+ {n_ca:"Desafiament de Bordeus", n_es:"Desafío de Burdeos", ys:1283, lat:44.8378, lon:-0.5792, kind:"dedication", out:"uncertain",
+  res_ca:"Pere el Gran accepta un duel amb Carles d'Anjou pel tron de Sicília; hi arriba disfressat amb pocs cavallers, fa notarialment constar la seva presència i marxa abans que l'exèrcit francès (12.000 homes) el pugui capturar.", res_es:"Pedro el Grande acepta un duelo con Carlos de Anjou por el trono de Sicilia; llega disfrazado con pocos caballeros, hace constar notarialmente su presencia y se marcha antes de que el ejército francés (12.000 hombres) pueda capturarlo."},
+ {n_ca:"Intent de cop de Bernat de Cabrera a Sicília", n_es:"Intento de golpe de Bernardo Cabrera en Sicilia", ys:1410, lat:37.5079, lon:15.083, kind:"revolt", out:"lost",
+  res_ca:"El comte de Mòdica assetja repetidament la reina vídua Blanca de Navarra per forçar-la a casar-s'hi i fer-se amb el tron; finalment és capturat i empresonat.", res_es:"El conde de Módica asedia repetidamente a la reina viuda Blanca de Navarra para forzarla a casarse con él y hacerse con el trono; finalmente es capturado y encarcelado."},
+ {n_ca:"Disfida di Barletta", n_es:"Desafío de Barletta", ys:1503, lat:41.3181, lon:16.2803, kind:"battle", out:"won",
+  res_ca:"Tretze cavallers italians al servei de Gonzalo de Córdoba (el Gran Capità) vencen tretze cavallers francesos en un torneig d'honor, aixecant la moral hispànica abans de la decisiva victòria de Cerinyola.", res_es:"Trece caballeros italianos al servicio de Gonzalo de Córdoba (el Gran Capitán) vencen a trece caballeros franceses en un torneo de honor, levantando la moral hispánica antes de la decisiva victoria de Ceriñola."},
+,
+ /* --- New Cambridge Medieval History (A. Forey): granularitat del segle XIV --- */
+ {n_ca:"Setge d'Almeria (fallit)", n_es:"Sitio de Almería (fallido)", ys:1309, lat:36.834, lon:-2.4637, kind:"siege", dir:"imposed", out:"lost",
+  res_ca:"Acció conjunta amb Castella contra Granada; el setge, d'agost de 1309 a gener de 1310, no aconsegueix res, tot i que Castella sí pren Gibraltar.", res_es:"Acción conjunta con Castilla contra Granada; el sitio, de agosto de 1309 a enero de 1310, no consigue nada, aunque Castilla sí toma Gibraltar."},
+ {n_ca:"Reconeixement diplomàtic de la Vall d'Aran", n_es:"Reconocimiento diplomático del Valle de Arán", ys:1313, lat:42.7009, lon:0.7936, kind:"dedication", out:"won",
+  res_ca:"Jaume II obté per via diplomàtica el reconeixement dels seus drets sobre l'Aran, ocupada pels francesos als anys 1280 i després en mans de Mallorca.", res_es:"Jaime II obtiene por vía diplomática el reconocimiento de sus derechos sobre el Arán, ocupada por los franceses en los años 1280 y después en manos de Mallorca."},
+ {n_ca:"Unió Aragonesa de 1301", n_es:"Unión Aragonesa de 1301", ys:1301, lat:41.6488, lon:-0.8891, kind:"revolt", out:"lost",
+  res_ca:"Seixanta-sis nobles, liderats per Jaume de Xèrica, es reuneixen a Saragossa reclamant deutes reials; Jaume II els supera obtenint sentència del Justícia d'Aragó a les corts del mateix any.", res_es:"Sesenta y seis nobles, liderados por Jaime de Jérica, se reúnen en Zaragoza reclamando deudas reales; Jaime II los supera obteniendo sentencia del Justicia de Aragón en las cortes del mismo año."},
+ {n_ca:"Setge de Montsó (Temple)", n_es:"Sitio de Monzón (Temple)", ys:1308, lat:41.9139, lon:0.1961, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Arran de la dissolució de l'orde del Temple, els templers es tanquen als seus castells; el de Montsó resisteix un setge d'any i mig.", res_es:"Tras la disolución de la orden del Temple, los templarios se encierran en sus castillos; el de Monzón resiste un sitio de año y medio."},
+ {n_ca:"Batalla de Llucmajor", n_es:"Batalla de Llucmajor", ys:1349, lat:39.4897, lon:2.8917, kind:"battle", out:"won",
+  res_ca:"Jaume III de Mallorca mor intentant recuperar per la força el seu antic regne, definitivament reincorporat a la Corona d'Aragó.", res_es:"Jaime III de Mallorca muere intentando recuperar por la fuerza su antiguo reino, definitivamente reincorporado a la Corona de Aragón."},
+ {n_ca:"Caiguda de Tarassona davant Castella", n_es:"Caída de Tarazona ante Castilla", ys:1357, lat:41.9061, lon:-1.7278, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Primera gran pèrdua aragonesa a la Guerra dels Dos Peres; recuperada el 1360 mitjançant sobornar l'alcalde castellà.", res_es:"Primera gran pérdida aragonesa en la Guerra de los Dos Pedros; recuperada en 1360 mediante soborno al alcalde castellano."},
+ {n_ca:"Ofensiva castellana de 1362-63", n_es:"Ofensiva castellana de 1362-63", ys:1362, lat:40.4, lon:-1.0, kind:"siege", dir:"suffered", out:"lost",
+  res_ca:"Pere el Cruel reprèn la guerra: cauen Calataiud, Terol, Sogorb i Morvedre; bona part del Regne de València queda sota control castellà fins a la Pau de Morvedre (1363).", res_es:"Pedro el Cruel reanuda la guerra: caen Calatayud, Teruel, Segorbe y Murviedro; buena parte del Reino de Valencia queda bajo control castellano hasta la Paz de Murviedro (1363)."},
+ {n_ca:"Intervenció de Bertrand du Guesclin", n_es:"Intervención de Bertrand du Guesclin", ys:1366, lat:41.6488, lon:-0.8891, kind:"dedication", out:"won",
+  res_ca:"Companyies mercenàries franceses sota du Guesclin, pagades per Pere IV, envaeixen Castella; Pere el Cruel fuig i Enric de Trastàmara és coronat rei a Burgos.", res_es:"Compañías mercenarias francesas bajo du Guesclin, pagadas por Pedro IV, invaden Castilla; Pedro el Cruel huye y Enrique de Trastámara es coronado rey en Burgos."},
+ {n_ca:"Pogrom de 1391", n_es:"Pogromo de 1391", ys:1391, lat:41.3873, lon:2.1686, kind:"revolt", out:"lost",
+  res_ca:"Onada de violència antijueva estesa des de Castella a València, Catalunya i Mallorca; centenars de morts (uns 300 a Mallorca, 250 a València) i conversions forçades que fan desaparèixer diverses aljames.", res_es:"Ola de violencia antijudía extendida desde Castilla a Valencia, Cataluña y Mallorca; centenares de muertos (unos 300 en Mallorca, 250 en Valencia) y conversiones forzadas que hacen desaparecer varias aljamas."},
+,
+ /* --- segona ronda del New Cambridge Medieval History: episodis addicionals del segle XIV --- */
+ {n_ca:"Pere III reclama la sobirania sobre Mallorca", n_es:"Pedro III reclama la soberanía sobre Mallorca", ys:1279, lat:39.5696, lon:2.6502, kind:"dedication", out:"won",
+  res_ca:"Sis anys abans de la conquesta militar del seu fill Alfons, Pere III ja imposa la seva sobirania (vassallatge) sobre el Regne de Mallorca del seu oncle.", res_es:"Seis años antes de la conquista militar de su hijo Alfonso, Pedro III ya impone su soberanía (vasallaje) sobre el Reino de Mallorca de su tío."},
+ {n_ca:"El papa atorga (sense efecte) la corona d'Aragó a Carles de Valois", n_es:"El papa otorga (sin efecto) la corona de Aragón a Carlos de Valois", ys:1285, lat:41.9028, lon:12.4964, kind:"dedication", out:"lost",
+  res_ca:"El papa Martí IV excomunica Pere III i concedeix formalment el Regne d'Aragó al fill del rei de França; la croada de 1285 que ho hauria de fer efectiu fracassa i la donació mai s'aplica.", res_es:"El papa Martín IV excomulga a Pedro III y concede formalmente el Reino de Aragón al hijo del rey de Francia; la cruzada de 1285 que debía hacerlo efectivo fracasa y la donación nunca se aplica."},
+ {n_ca:"Expedicions fallides contra Frederic de Sicília", n_es:"Expediciones fallidas contra Federico de Sicilia", ys:1298, lat:37.5, lon:14.0, kind:"siege", dir:"imposed", out:"lost",
+  res_ca:"Jaume II envia dues expedicions (1298 i 1299) per retirar el tron a son germà Frederic, tal com havia promès al Papa a Anagni; ambdues fracassen i Frederic manté el poder.", res_es:"Jaime II envía dos expediciones (1298 y 1299) para retirar el trono a su hermano Federico, tal como había prometido al Papa en Anagni; ambas fracasan y Federico mantiene el poder."},
+ {n_ca:"Revolta sarda amb suport genovès", n_es:"Revuelta sarda con apoyo genovés", ys:1329, lat:40.7259, lon:8.5557, kind:"revolt", out:"uncertain",
+  res_ca:"Nova revolta a Sardenya amb suport de Génova, que reobre el conflicte amb la Corona al Mediterrani occidental.", res_es:"Nueva revuelta en Cerdeña con apoyo de Génova, que reabre el conflicto con la Corona en el Mediterráneo occidental."},
+ {n_ca:"Aliança amb Venècia contra Génova", n_es:"Alianza con Venecia contra Génova", ys:1351, lat:45.4408, lon:12.3155, kind:"dedication", out:"won",
+  res_ca:"Pere el Cerimoniós s'alia amb la República de Venècia per fer front a la creixent amenaça genovesa a la Mediterrània.", res_es:"Pedro el Ceremonioso se alía con la República de Venecia para hacer frente a la creciente amenaza genovesa en el Mediterráneo."},
+ {n_ca:"Batalla naval de Sardenya (contra Génova)", n_es:"Batalla naval de Cerdeña (contra Génova)", ys:1353, lat:39.2238, lon:9.1217, kind:"battle", out:"won",
+  res_ca:"Victòria decisiva catalanovenetiana sobre la flota genovesa davant les costes de Sardenya, després d'una primera batalla inconclusa a l'Egeu el 1352.", res_es:"Victoria decisiva catalano-veneciana sobre la flota genovesa frente a las costas de Cerdeña, tras una primera batalla inconclusa en el Egeo en 1352."},
+ {n_ca:"Incursions granadines contra València", n_es:"Incursiones granadinas contra Valencia", ys:1331, lat:38.6, lon:-0.6, kind:"siege", dir:"suffered", out:"uncertain",
+  res_ca:"Ràtzies del Regne de Granada contra la frontera meridional valenciana, aprofitant que Alfons IV encara negociava suport papal.", res_es:"Razias del Reino de Granada contra la frontera meridional valenciana, aprovechando que Alfonso IV todavía negociaba apoyo papal."},
+ {n_ca:"Croades de represàlia contra el Nord d'Àfrica", n_es:"Cruzadas de represalia contra el Norte de África", ys:1398, lat:35.5, lon:-0.6, kind:"siege", dir:"imposed", out:"uncertain",
+  res_ca:"Expedicions de 1398 i 1399 en represàlia per atacs pirates a la costa valenciana; no busquen conquesta territorial, només càstig i botí.", res_es:"Expediciones de 1398 y 1399 en represalia por ataques piratas a la costa valenciana; no buscan conquista territorial, solo castigo y botín."},
 ];
 
 const MONARQUES = [
@@ -1299,7 +1946,7 @@ const GUERRES = [
  {n_ca:"Guerres sardocatalanes", n_es:"Guerras sardo-catalanas", ys:1324, ye:1420, out:"uncertain",
   res_ca:"Conquesta llarga i costosa contra el Jutjat d'Arborea.", res_es:"Conquista larga y costosa contra el Judicado de Arborea."},
  {n_ca:"Guerra dels dos Peres (amb Castella)", n_es:"Guerra de los dos Pedros (con Castilla)", ys:1356, ye:1375, out:"won",
-  res_ca:"Conflicte llarg marcat per la victòria naval de Barcelona (1359, amb ús pioner de pólvora); resolt definitivament pel Tractat d'Almassà (1375).", res_es:"Conflicto largo marcado por la victoria naval de Barcelona (1359, con uso pionero de pólvora); resuelto definitivamente por el Tratado de Almazán (1375)."},
+  res_ca:"Conflicte llarg amb fortunes canviants: caiguda de Tarassona (1357), victòria naval de Barcelona (1359), pèrdua de Calataiud/Terol/Morvedre (1362-63), i finalment la intervenció decisiva de mercenaris francesos el 1366; resolt pel Tractat d'Almassà (1375).", res_es:"Conflicto largo con fortunas cambiantes: caída de Tarazona (1357), victoria naval de Barcelona (1359), pérdida de Calatayud/Teruel/Murviedro (1362-63), y finalmente la intervención decisiva de mercenarios franceses en 1366; resuelto por el Tratado de Almazán (1375)."},
  {n_ca:"Conquesta de Nàpols per Alfons el Magnànim", n_es:"Conquista de Nápoles por Alfonso el Magnánimo", ys:1435, ye:1442, out:"won",
   res_ca:"Victòria; Alfons rei de Nàpols.", res_es:"Victoria; Alfonso rey de Nápoles."},
  {n_ca:"Guerra de la Unió", n_es:"Guerra de la Unión", ys:1347, ye:1348, out:"won",
@@ -1338,11 +1985,16 @@ const PERSONATGES = [
 ];
 
 const CRONOLOGIA = [
+ {ys:778, ca:"Desfeta franca a Roncesvalls, en retirada d'una expedició fallida contra Saragossa.", es:"Derrota franca en Roncesvalles, en retirada de una expedición fallida contra Zaragoza."},
  {ys:801, ca:"Carlemany crea la Marca Hispànica.", es:"Carlomagno crea la Marca Hispánica."},
  {ys:878, ca:"Guifré el Pilós reuneix Barcelona, Girona i Osona.", es:"Wifredo el Velloso reúne Barcelona, Girona y Osona."},
+ {ys:985, ca:"Almansor saqueja Barcelona; Borrell II demana ajut franc sense èxit.", es:"Almanzor saquea Barcelona; Borrell II pide ayuda franca sin éxito."},
  {ys:988, ca:"Borrell II trenca el vassallatge amb el rei franc.", es:"Borrell II rompe el vasallaje con el rey franco."},
+ {ys:1010, ca:"Saqueig de Còrdova per tropes catalanes aliades amb musulmans rebels.", es:"Saqueo de Córdoba por tropas catalanas aliadas con musulmanes rebeldes."},
  {ys:1035, ca:"Neix el Regne d'Aragó sota Ramir I.", es:"Nace el Reino de Aragón bajo Ramiro I."},
  {ys:1137, ca:"Unió dinàstica: naixement de la Corona d'Aragó.", es:"Unión dinástica: nacimiento de la Corona de Aragón."},
+ {ys:1114, ca:"Primera conquesta (efímera) d'Eivissa i Mallorca; perdudes de nou el 1116.", es:"Primera conquista (efímera) de Ibiza y Mallorca; perdidas de nuevo en 1116."},
+ {ys:1125, ca:"Tractat de partició de Provença amb el comtat de Tolosa.", es:"Tratado de partición de Provenza con el condado de Tolosa."},
  {ys:1134, ca:"Setge de Fraga: Alfons I ferit mortalment; mort sense hereus i crisi successòria.", es:"Sitio de Fraga: Alfonso I herido mortalmente; muerte sin herederos y crisis sucesoria."},
  {ys:1140, ca:"Tractat de Carrión amb Castella.", es:"Tratado de Carrión con Castilla."},
  {ys:1148, ca:"Conquesta de Tortosa.", es:"Conquista de Tortosa."},
@@ -1355,21 +2007,37 @@ const CRONOLOGIA = [
  {ys:1229, ca:"Jaume I inicia la conquesta de Mallorca.", es:"Jaime I inicia la conquista de Mallorca."},
  {ys:1235, ca:"Conquesta d'Eivissa.", es:"Conquista de Ibiza."},
  {ys:1238, ca:"Jaume I conquereix València.", es:"Jaime I conquista Valencia."},
+ {ys:1209, ca:"Matrimoni de Constança d'Aragó amb Frederic II: primer vincle amb Sicília.", es:"Matrimonio de Constanza de Aragón con Federico II: primer vínculo con Sicilia."},
  {ys:1244, ca:"Tractat d'Almizra: repartiment amb Castella.", es:"Tratado de Almizra: reparto con Castilla."},
  {ys:1258, ca:"Tractat de Corbeil: fi de les pretensions occitanes i franceses.", es:"Tratado de Corbeil: fin de las pretensiones occitanas y francesas."},
+ {ys:1261, ca:"Pere (III) es casa amb Constança de Hohenstaufen, filla de Manfred de Sicília.", es:"Pedro (III) se casa con Constanza de Hohenstaufen, hija de Manfredo de Sicilia."},
  {ys:1276, ca:"Mort de Jaume I; separació temporal del Regne de Mallorca.", es:"Muerte de Jaime I; separación temporal del Reino de Mallorca."},
  {ys:1282, ca:"Vespres Sicilianes; conquesta de Sicília.", es:"Vísperas Sicilianas; conquista de Sicilia."},
+ {ys:1283, ca:"Desafiament de Bordeus: Pere el Gran esquiva la trampa de Carles d'Anjou.", es:"Desafío de Burdeos: Pedro el Grande esquiva la trampa de Carlos de Anjou."},
  {ys:1285, ca:"Croada francesa contra Catalunya: caiguda i alliberament de Girona.", es:"Cruzada francesa contra Cataluña: caída y liberación de Girona."},
+ {ys:1283, ca:"La noblesa aragonesa exigeix l'expulsió dels oficials no aragonesos de la cort.", es:"La nobleza aragonesa exige la expulsión de los oficiales no aragoneses de la corte."},
+ {ys:1279, ca:"Pere III reclama la sobirania sobre el Regne de Mallorca del seu oncle.", es:"Pedro III reclama la soberanía sobre el Reino de Mallorca de su tío."},
+ {ys:1285, ca:"El papa concedeix (sense efecte) la corona d'Aragó a Carles de Valois.", es:"El papa concede (sin efecto) la corona de Aragón a Carlos de Valois."},
  {ys:1287, ca:"Conquesta de Menorca; Unió Aragonesa obté el Privilegi de la Unió.", es:"Conquista de Menorca; Unión Aragonesa obtiene el Privilegio de la Unión."},
+ {ys:1298, ca:"Expedicions fallides de Jaume II contra el seu germà Frederic de Sicília.", es:"Expediciones fallidas de Jaime II contra su hermano Federico de Sicilia."},
  {ys:1291, ca:"Acord de Monteagudo amb Castella: repartiment d'influència al Magrib.", es:"Acuerdo de Monteagudo con Castilla: reparto de influencia en el Magreb."},
  {ys:1295, ca:"Pau d'Anagni: Jaume II cedeix Sicília, rep la investidura de Còrsega i Sardenya.", es:"Paz de Anagni: Jaime II cede Sicilia, recibe la investidura de Córcega y Cerdeña."},
  {ys:1305, ca:"Tractat d'Elx: Múrcia passa a Castella (llevat d'Oriola i Alacant).", es:"Tratado de Elche: Murcia pasa a Castilla (salvo Orihuela y Alicante)."},
+ {ys:1301, ca:"Unió Aragonesa de 1301: nova revolta nobiliària, superada per Jaume II.", es:"Unión Aragonesa de 1301: nueva revuelta nobiliaria, superada por Jaime II."},
+ {ys:1300, ca:"Els almogàvers, infanteria lleugera nascuda a la frontera de la Reconquesta, esdevenen la força de xoc de les campanyes mediterrànies.", es:"Los almogávares, infantería ligera nacida en la frontera de la Reconquista, se convierten en la fuerza de choque de las campañas mediterráneas."},
+ {ys:1309, ca:"Setge fallit d'Almeria, en acció conjunta amb Castella.", es:"Sitio fallido de Almería, en acción conjunta con Castilla."},
+ {ys:1313, ca:"Reconeixement diplomàtic dels drets aragonesos sobre la Vall d'Aran.", es:"Reconocimiento diplomático de los derechos aragoneses sobre el Valle de Arán."},
  {ys:1311, ca:"La Companyia Catalana conquereix Atenes.", es:"La Compañía Catalana conquista Atenas."},
- {ys:1324, ca:"Inici de la conquesta de Sardenya.", es:"Inicio de la conquista de Cerdeña."},
- {ys:1349, ca:"Reincorporació del Regne de Mallorca.", es:"Reincorporación del Reino de Mallorca."},
+ {ys:1324, ca:"Inici de la conquesta de Sardenya; setge d'Iglésies i batalles de Lucocisterna i el golf de Càller.", es:"Inicio de la conquista de Cerdeña; sitio de Iglesias y batallas de Lucocisterna y el golfo de Cagliari."},
+ {ys:1343, ca:"Pere IV inicia la conquesta militar del Regne de Mallorca.", es:"Pedro IV inicia la conquista militar del Reino de Mallorca."},
+ {ys:1349, ca:"Batalla de Llucmajor: mort de Jaume III; reincorporació definitiva del Regne de Mallorca.", es:"Batalla de Llucmajor: muerte de Jaime III; reincorporación definitiva del Reino de Mallorca."},
  {ys:1304, ca:"Sentència Arbitral de Torrelles reparteix Múrcia amb Castella.", es:"Sentencia Arbitral de Torrellas reparte Murcia con Castilla."},
  {ys:1347, ca:"Esclata la Guerra de la Unió a Aragó i València.", es:"Estalla la Guerra de la Unión en Aragón y Valencia."},
  {ys:1348, ca:"Batalles d'Épila i Mislata posen fi a la Guerra de la Unió.", es:"Batallas de Épila y Mislata ponen fin a la Guerra de la Unión."},
+ {ys:1329, ca:"Nova revolta sarda amb suport genovès.", es:"Nueva revuelta sarda con apoyo genovés."},
+ {ys:1331, ca:"Incursions granadines contra la frontera valenciana.", es:"Incursiones granadinas contra la frontera valenciana."},
+ {ys:1351, ca:"Aliança amb Venècia contra Génova.", es:"Alianza con Venecia contra Génova."},
+ {ys:1353, ca:"Victòria naval decisiva sobre Génova davant Sardenya.", es:"Victoria naval decisiva sobre Génova frente a Cerdeña."},
  {ys:1355, ca:"Sardenya rep Corts pròpies de model català.", es:"Cerdeña recibe Cortes propias de modelo catalán."},
  {ys:1363, ca:"Creació de les diputacions permanents d'Aragó, Catalunya i València.", es:"Creación de las diputaciones permanentes de Aragón, Cataluña y Valencia."},
  {ys:1380, ca:"Pere III assumeix la sobirania directa d'Atenes i Neopàtria.", es:"Pedro III asume la soberanía directa de Atenas y Neopatria."},
@@ -1384,26 +2052,40 @@ const CRONOLOGIA = [
  {ys:1260, ca:"Fundació del Consolat de Mar a Barcelona.", es:"Fundación del Consulado del Mar en Barcelona."},
  {ys:1283, ca:"Pere el Gran estructura les Corts Catalanes.", es:"Pedro el Grande estructura las Cortes Catalanas."},
  {ys:1348, ca:"La Pesta Negra arriba a Catalunya; mor gairebé la meitat de la població.", es:"La Peste Negra llega a Cataluña; muere casi la mitad de la población."},
- {ys:1420, ca:"Fi de la resistència d'Arborea a Sardenya.", es:"Fin de la resistencia de Arborea en Cerdeña."},
+ {ys:1391, ca:"Pogrom antijueu a València, Catalunya i Mallorca; centenars de morts.", es:"Pogromo antijudío en Valencia, Cataluña y Mallorca; centenares de muertos."},
+ {ys:1398, ca:"Croades de represàlia contra el Nord d'Àfrica per atacs pirates.", es:"Cruzadas de represalia contra el Norte de África por ataques piratas."},
+ {ys:1401, ca:"Creació de la Taula de Canvi de Barcelona, banc públic pioner.", es:"Creación de la Taula de Canvi de Barcelona, banco público pionero."},
+ {ys:1368, ca:"Ofensiva de Marià IV d'Arborea redueix la Corona a Càller i l'Alguer.", es:"Ofensiva de Mariano IV de Arborea reduce la Corona a Cagliari y Alguer."},
+ {ys:1391, ca:"Segona ofensiva d'Arborea sota Brancaleone Doria.", es:"Segunda ofensiva de Arborea bajo Brancaleone Doria."},
+ {ys:1410, ca:"Bernat de Cabrera intenta un cop de mà a Sicília assetjant la reina Blanca de Navarra.", es:"Bernardo Cabrera intenta un golpe de mano en Sicilia asediando a la reina Blanca de Navarra."},
+ {ys:1420, ca:"La Corona compra els territoris restants d'Arborea per 100.000 florins.", es:"La Corona compra los territorios restantes de Arborea por 100.000 florines."},
  {ys:1421, ca:"Alfons el Magnànim és adoptat hereu per Joana II de Nàpols; l'adopció es revoca el 1423.", es:"Alfonso el Magnánimo es adoptado heredero por Juana II de Nápoles; la adopción se revoca en 1423."},
  {ys:1442, ca:"Alfons el Magnànim conquereix Nàpols.", es:"Alfonso el Magnánimo conquista Nápoles."},
  {ys:1460, ca:"Pèrdua de l'illa de Piada, darrer territori grec.", es:"Pérdida de la isla de Piada, último territorio griego."},
  {ys:1359, ca:"Batalla naval de Barcelona: primer ús documentat de pólvora naval a Occident.", es:"Batalla naval de Barcelona: primer uso documentado de pólvora naval en Occidente."},
  {ys:1375, ca:"Tractat d'Almassà tanca la Guerra dels Dos Peres.", es:"Tratado de Almazán cierra la Guerra de los Dos Pedros."},
  {ys:1462, ca:"Esclat de la guerra civil catalana; Rosselló i Cerdanya empenyorats a França.", es:"Estallido de la guerra civil catalana; Rosellón y Cerdaña empeñados a Francia."},
+ {ys:1463, ca:"La Generalitat proclama rei Pere de Portugal.", es:"La Generalitat proclama rey a Pedro de Portugal."},
+ {ys:1466, ca:"La Generalitat ofereix la corona a Renat d'Anjou.", es:"La Generalitat ofrece la corona a Renato de Anjou."},
+ {ys:1472, ca:"Pau de Pedralbes: Joan II recupera el tron català.", es:"Paz de Pedralbes: Juan II recupera el trono catalán."},
  {ys:1463, ca:"Sentència Arbitral de Baiona.", es:"Sentencia Arbitral de Bayona."},
  {ys:1476, ca:"Batalla de Toro: Ferran consolida la seva posició a Castella.", es:"Batalla de Toro: Fernando consolida su posición en Castilla."},
  {ys:1512, ca:"Conquesta de Navarra per Ferran el Catòlic; incorporada a Castella, no a Aragó.", es:"Conquista de Navarra por Fernando el Católico; incorporada a Castilla, no a Aragón."},
  {ys:1487, ca:"Barcelona finança amb pólvora i diners el setge de Màlaga, tot i no obtenir-ne cap guany territorial.", es:"Barcelona financia con pólvora y dinero el sitio de Málaga, sin obtener ninguna ganancia territorial."},
  {ys:1493, ca:"Ferran el Catòlic recupera Rosselló i Cerdanya (Tractat de Barcelona).", es:"Fernando el Católico recupera Rosellón y Cerdaña (Tratado de Barcelona)."},
  {ys:1479, ca:"Unió dinàstica amb Castella (Reis Catòlics).", es:"Unión dinástica con Castilla (Reyes Católicos)."},
- {ys:1503, ca:"Reincorporació definitiva de Nàpols.", es:"Reincorporación definitiva de Nápoles."},
+ {ys:1503, ca:"Disfida di Barletta i victòria de Cerinyola: reincorporació definitiva de Nàpols.", es:"Desafío de Barletta y victoria de Ceriñola: reincorporación definitiva de Nápoles."},
  {ys:1516, ca:"Mort de Ferran II: els territoris de la Corona passen a la Monarquia Hispànica sota Carles I.", es:"Muerte de Fernando II: los territorios de la Corona pasan a la Monarquía Hispánica bajo Carlos I."},
  {ys:1522, ca:"Malta cedida als Cavallers Hospitalers.", es:"Malta cedida a los Caballeros Hospitalarios."},
  {ys:1640, ca:"Corpus de Sang: esclat de la Guerra dels Segadors.", es:"Corpus de Sangre: estallido de la Guerra de los Segadores."},
  {ys:1652, ca:"Rendició de Barcelona; fi de la Guerra dels Segadors.", es:"Rendición de Barcelona; fin de la Guerra de los Segadores."},
+ {ys:1580, ca:"Unió Ibèrica: Felip II esdevé també rei de Portugal.", es:"Unión Ibérica: Felipe II se convierte también en rey de Portugal."},
+ {ys:1640, ca:"Restauració portuguesa: fi de la Unió Ibèrica.", es:"Restauración portuguesa: fin de la Unión Ibérica."},
  {ys:1659, ca:"Tractat dels Pirineus: cessió de Rosselló i part de la Cerdanya a França.", es:"Tratado de los Pirineos: cesión de Rosellón y parte de la Cerdaña a Francia."},
  {ys:1707, ca:"Nova Planta per a València i Aragó.", es:"Nueva Planta para Valencia y Aragón."},
+ {ys:1717, ca:"Alberoni ocupa Sardenya, intentant recuperar l'Itàlia perduda a Utrecht.", es:"Alberoni ocupa Cerdeña, intentando recuperar la Italia perdida en Utrecht."},
+ {ys:1718, ca:"Ocupació de Sicília; desfeta naval espanyola al cap Passaro.", es:"Ocupación de Sicilia; derrota naval española en el cabo Passaro."},
+ {ys:1720, ca:"Tractat de la Haia: fi definitiva de la presència espanyola a Sardenya i Sicília.", es:"Tratado de La Haya: fin definitivo de la presencia española en Cerdeña y Sicilia."},
  {ys:1713, ca:"Menorca cedida al Regne Unit (Tractat d'Utrecht).", es:"Menorca cedida al Reino Unido (Tratado de Utrecht)."},
  {ys:1714, ca:"Caiguda de Barcelona.", es:"Caída de Barcelona."},
  {ys:1716, ca:"Decret de Nova Planta de Catalunya: fi de les institucions pròpies.", es:"Decreto de Nueva Planta de Cataluña: fin de las instituciones propias."}
@@ -1411,12 +2093,12 @@ const CRONOLOGIA = [
 
 /* ===================== ESTAT ===================== */
 let LANG = 'ca';
-const YMIN = 800, YMAX = 1720;
+const YMIN = 800, YMAX = 1725;
 let currentYear = 1137;
 let activeEntities = new Set(Object.keys(ENTITATS));
 
 const STR = {
-  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.18",
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.36",
       visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)",
       fullscreen:"Pantalla completa", exitFullscreen:"Sortir", support:"Suport",
       supportTitle:"Sosté el projecte",
@@ -1424,14 +2106,18 @@ const STR = {
       supportRevolutText:"Pots enviar-me pagaments per Revolut mitjançant aquest enllaç: revolut.me/massimxz2d",
       supportIbanLabel:"Transferència (IBAN Revolut)",
       supportIbanText:"Beneficiari: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, Espanya",
+      supportBar:"Sosté el projecte", commentBar:"Aporta una novetat",
+      commentTitle:"Aporta una novetat o correcció",
+      commentBody:"Aquest espai no és per a comentaris generals ni crítiques: és un canal directe per aportar dades noves, fonts, correccions o ampliacions que ajudin a fer avançar, corregir i completar el projecte.",
+      commentPlaceholder:"Escriu aquí la teva aportació…", commentEmailPlaceholder:"El teu correu, si vols resposta (opcional)", commentSend:"Enviar",
       entitats:"Entitats sobiranes (territoris)", batMap:"Batalles i esdeveniments al mapa",
       bWon:"Batalles guanyades", bUnc:"Batalles d'esdeveniment incert", bLost:"Batalles perdudes",
       sImp:"Setges imposats", sSuf:"Setges patits", revolt:"Revoltes", ded:"Dedicacions / adhesions",
       fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
       guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
       legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
-      disclaimer:"Projecte de recerca personal i no oficial. Dades en fase inicial d'elaboració (esborrany v0.18): cal verificació i ampliació."},
-  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.18",
+      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.36): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.36",
       visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)",
       fullscreen:"Pantalla completa", exitFullscreen:"Salir", support:"Apoyo",
       supportTitle:"Apoya el proyecto",
@@ -1439,13 +2125,17 @@ const STR = {
       supportRevolutText:"Puedes enviarme pagos por Revolut mediante este enlace: revolut.me/massimxz2d",
       supportIbanLabel:"Transferencia (IBAN Revolut)",
       supportIbanText:"Beneficiario: Massimo Pietrobon · IBAN: ES65 1583 0001 1290 3165 0674 · BIC/SWIFT: REVOESM2 · Revolut Bank UAB, Calle Príncipe de Vergara 132, 4ª planta, 28002 Madrid, España",
+      supportBar:"Apoya el proyecto", commentBar:"Aporta una novedad",
+      commentTitle:"Aporta una novedad o corrección",
+      commentBody:"Este espacio no es para comentarios generales ni críticas: es un canal directo para aportar datos nuevos, fuentes, correcciones o ampliaciones que ayuden a hacer avanzar, corregir y completar el proyecto.",
+      commentPlaceholder:"Escribe aquí tu aportación…", commentEmailPlaceholder:"Tu correo, si quieres respuesta (opcional)", commentSend:"Enviar",
       entitats:"Entidades soberanas (territorios)", batMap:"Batallas y eventos en el mapa",
       bWon:"Batallas ganadas", bUnc:"Batallas de resultado incierto", bLost:"Batallas perdidas",
       sImp:"Sitios impuestos", sSuf:"Sitios sufridos", revolt:"Revueltas", ded:"Dedicaciones / adhesiones",
       fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
       guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
       legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
-      disclaimer:"Proyecto de investigación personal y no oficial. Datos en fase inicial de elaboración (borrador v0.18): requieren verificación y ampliación."}
+      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.36): requieren verificación y ampliación."}
 };
 
 function setLang(l){
@@ -1474,6 +2164,14 @@ function refreshAllTexts(){
   document.getElementById('supportRevolut').textContent = s.supportRevolutText;
   document.getElementById('supportIbanLabel').textContent = s.supportIbanLabel;
   document.getElementById('supportIban').textContent = s.supportIbanText;
+  document.getElementById('lblSupportBar').textContent = s.supportBar;
+  document.getElementById('lblCommentBar').textContent = s.commentBar;
+  document.getElementById('commentTitle').textContent = s.commentTitle;
+  document.getElementById('commentBody').textContent = s.commentBody;
+  document.getElementById('commentText').placeholder = s.commentPlaceholder;
+  document.getElementById('commentEmail').placeholder = s.commentEmailPlaceholder;
+  document.getElementById('commentSendBtn').textContent = s.commentSend;
+  updatePeriodBadge();
   document.getElementById('lblEntitats').textContent = s.entitats;
   document.getElementById('lblBatMap').textContent = s.batMap;
   document.getElementById('lblBWon').textContent = s.bWon;
@@ -1524,6 +2222,7 @@ function renderLegend(){
     const label = LANG==='ca' ? ent.label_ca : ent.label_es;
     html += `<div class="lg-row"><span class="lg-dot" style="background:${ent.color}"></span>${label}</div>`;
   });
+  html += `<div class="lg-row"><span class="lg-dot" style="background:#f2ead9;border:2px dashed #8a7a5a;"></span>${LANG==='ca'?"Possessió personal del monarca (no Corona)":"Posesión personal del monarca (no Corona)"}</div>`;
   html += `<h3>${s.legendBatalles}</h3>`;
   const items = [
     ['⚔','#c62828', LANG==='ca'?'Batalla guanyada':'Batalla ganada'],
@@ -1543,6 +2242,20 @@ function renderLegend(){
 
 /* ===================== MAPA ===================== */
 const map = L.map('map', {zoomSnap:0.5}).setView([40.2, 5.5], 5);
+
+/* Alguns navegadors mòbils calculen malament l'alçada del contenidor de la mapa en carregar
+   (abans que la graella CSS i les fonts s'hagin assentat del tot), fent que Leaflet posicioni
+   els marcadors fora de la zona visible fins que alguna cosa força un redibuixat. Un
+   ResizeObserver soluciona això de manera robusta i automàtica, sense dependre de temporitzadors. */
+if(window.ResizeObserver){
+  new ResizeObserver(()=> map.invalidateSize()).observe(document.getElementById('map'));
+}
+window.addEventListener('load', ()=>{
+  map.invalidateSize();
+  setTimeout(()=> map.invalidateSize(), 300);
+  setTimeout(()=> map.invalidateSize(), 800);
+});
+
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:'&copy; OpenStreetMap contributors', maxZoom:18
 }).addTo(map);
@@ -1587,15 +2300,23 @@ function updateMap(){
     if(!activeEntities.has(t.ent)) return;
     const ent = ENTITATS[t.ent];
     const isNominal = !!t.nominal;
-    const marker = L.circleMarker([t.lat, t.lon], {
-      radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
-      fillOpacity: isNominal ? 0.35 : 0.85, dashArray: isNominal ? '3,3' : null
-    });
+    const isPersonal = !!t.personal;
+    let markerOpts;
+    if(isPersonal){
+      // possessió personal del monarca, NO territori formal de la Corona d'Aragó:
+      // cercle buit/blanquinós amb la vora del color de l'entitat, per marcar la diferència d'estatus.
+      markerOpts = {radius:8, color:ent.color, weight:2, fillColor:'#f2ead9', fillOpacity:0.55, dashArray:'2,3'};
+    } else {
+      markerOpts = {radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
+        fillOpacity: isNominal ? 0.35 : 0.85, dashArray: isNominal ? '3,3' : null};
+    }
+    const marker = L.circleMarker([t.lat, t.lon], markerOpts);
     const name = LANG==='ca' ? t.n_ca : t.n_es;
     const note = LANG==='ca' ? t.note_ca : t.note_es;
     const entLabel = LANG==='ca' ? ent.label_ca : ent.label_es;
     const nominalTag = isNominal ? (LANG==='ca' ? '<br><i>(sobirania nominal / pretesa, no dominada efectivament)</i>' : '<br><i>(soberanía nominal / pretendida, no dominada efectivamente)</i>') : '';
-    marker.bindPopup(`<div class="popup-${LANG}"><b>${name}</b><br>${entLabel} (${t.ys}\u2013${t.ye})<br>${note}${nominalTag}</div>`);
+    const personalTag = isPersonal ? (LANG==='ca' ? '<br><i>(possessió personal del monarca; no és territori formal de la Corona d\'Aragó)</i>' : '<br><i>(posesión personal del monarca; no es territorio formal de la Corona de Aragón)</i>') : '';
+    marker.bindPopup(`<div class="popup-${LANG}"><b>${name}</b><br>${entLabel} (${t.ys}\u2013${t.ye})<br>${note}${nominalTag}${personalTag}</div>`);
     marker.addTo(territoriLayer);
   });
 
@@ -1628,6 +2349,7 @@ function goToYear(y){
   currentYear = y;
   slider.value = y; yearInput.value = y; yearReadout.textContent = y;
   updateMap();
+  updatePeriodBadge();
 }
 slider.addEventListener('input', ()=> goToYear(parseInt(slider.value,10)));
 yearInput.addEventListener('change', ()=> goToYear(parseInt(yearInput.value,10)||currentYear));
@@ -1694,17 +2416,17 @@ function updateLayout(){
   if(isMobile){
     let rows = 'auto minmax(190px,38vh)', areas = '"header" "map"';
     active.forEach(s=>{ rows += ' minmax(120px,22vh)'; areas += ` "${s.key}"`; });
-    rows += ' minmax(170px,26vh) auto';
-    areas += ' "side" "timeline"';
+    rows += ' minmax(170px,26vh) auto auto auto';
+    areas += ' "side" "timeline" "footer" "bottombar"';
     appEl.style.gridTemplateColumns = '1fr';
     appEl.style.gridTemplateRows = rows;
     appEl.style.gridTemplateAreas = areas;
   } else {
-    let cols = '320px 1fr', header = '"header header', mid = '"side map', tl = '"timeline timeline';
-    active.forEach(s=>{ cols += ' 250px'; header += ' header'; mid += ' '+s.key; tl += ' timeline'; });
+    let cols = '320px 1fr', header = '"header header', mid = '"side map', tl = '"timeline timeline', ft = '"footer footer', bb = '"bottombar bottombar';
+    active.forEach(s=>{ cols += ' 250px'; header += ' header'; mid += ' '+s.key; tl += ' timeline'; ft += ' footer'; bb += ' bottombar'; });
     appEl.style.gridTemplateColumns = cols;
-    appEl.style.gridTemplateRows = '';
-    appEl.style.gridTemplateAreas = `${header}" ${mid}" ${tl}"`;
+    appEl.style.gridTemplateRows = 'auto 1fr auto auto auto';
+    appEl.style.gridTemplateAreas = `${header}" ${mid}" ${tl}" ${ft}" ${bb}"`;
   }
   setTimeout(()=> map.invalidateSize(), 150);
 }
@@ -1764,13 +2486,16 @@ function enterFullscreen(){
   appEl.classList.add('is-fullscreen');
   const req = appEl.requestFullscreen || appEl.webkitRequestFullscreen || appEl.msRequestFullscreen;
   if(req){ req.call(appEl).catch(()=>{}); }
-  setTimeout(()=> map.invalidateSize(), 200);
+  setTimeout(()=> map.invalidateSize(), 150);
+  setTimeout(()=> map.invalidateSize(), 450);
 }
 function exitFullscreenMode(){
   appEl.classList.remove('is-fullscreen');
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
   if(document.fullscreenElement && exit){ exit.call(document).catch(()=>{}); }
-  setTimeout(()=> map.invalidateSize(), 200);
+  updateLayout();
+  setTimeout(()=> map.invalidateSize(), 150);
+  setTimeout(()=> map.invalidateSize(), 450);
 }
 document.getElementById('fullscreenBtn').addEventListener('click', enterFullscreen);
 document.getElementById('exitFullscreenBtn').addEventListener('click', exitFullscreenMode);
@@ -1783,20 +2508,90 @@ document.addEventListener('fullscreenchange', ()=>{
 
 /* ===================== SUPORT AL PROJECTE ===================== */
 const supportOverlay = document.getElementById('supportModalOverlay');
-document.getElementById('supportBtn').addEventListener('click', ()=> supportOverlay.classList.add('open'));
+document.getElementById('supportBarBtn').addEventListener('click', ()=> supportOverlay.classList.add('open'));
 document.getElementById('supportCloseBtn').addEventListener('click', ()=> supportOverlay.classList.remove('open'));
 supportOverlay.addEventListener('click', (e)=>{ if(e.target === supportOverlay) supportOverlay.classList.remove('open'); });
+
+/* ===================== APORTAR NOVETATS (formulari -> email) ===================== */
+const commentOverlay = document.getElementById('commentModalOverlay');
+document.getElementById('commentBarBtn').addEventListener('click', ()=> commentOverlay.classList.add('open'));
+document.getElementById('commentCloseBtn').addEventListener('click', ()=> commentOverlay.classList.remove('open'));
+commentOverlay.addEventListener('click', (e)=>{ if(e.target === commentOverlay) commentOverlay.classList.remove('open'); });
+document.getElementById('commentForm').addEventListener('submit', ()=>{
+  setTimeout(()=>{ commentOverlay.classList.remove('open'); document.getElementById('commentForm').reset(); }, 300);
+});
+
 document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && supportOverlay.classList.contains('open')) supportOverlay.classList.remove('open');
+  if(e.key !== 'Escape') return;
+  if(appEl.classList.contains('is-fullscreen')) exitFullscreenMode();
+  supportOverlay.classList.remove('open');
+  commentOverlay.classList.remove('open');
+});
+
+/* ===================== PERÍODE HISTÒRIC DINÀMIC ===================== */
+const PERIODS = [
+  {from:-9999, to:877, ca:"Marca Hispànica carolíngia", es:"Marca Hispánica carolingia"},
+  {from:878,  to:1136, ca:"Comtats i regnes cristians separats", es:"Condados y reinos cristianos separados"},
+  {from:1137, to:1515, ca:"Corona d'Aragó", es:"Corona de Aragón"},
+  {from:1516, to:1699, ca:"Part de la Monarquia Hispànica (Àustries)", es:"Parte de la Monarquía Hispánica (Austrias)"},
+  {from:1700, to:9999, ca:"Part de la Monarquia Hispànica (Borbons) — Decrets de Nova Planta", es:"Parte de la Monarquía Hispánica (Borbones) — Decretos de Nueva Planta"}
+];
+function updatePeriodBadge(){
+  const p = PERIODS.find(pp => currentYear >= pp.from && currentYear <= pp.to) || PERIODS[0];
+  document.getElementById('periodBadge').textContent = (LANG==='ca' ? p.ca : p.es) + ' · ' + currentYear;
+}
+
+/* ===================== DOBLE CLIC / DOBLE TOC PER SALTAR ANYS (a l'estil YouTube) ===================== */
+const mapEl = document.getElementById('map');
+function flashSkip(side){
+  const el = document.getElementById(side==='left' ? 'skipFlashLeft' : 'skipFlashRight');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.classList.remove('show'), 450);
+}
+mapEl.addEventListener('dblclick', (e)=>{
+  const rect = mapEl.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const frac = x / rect.width;
+  if(frac < 0.28){ nudgeYear(-10); flashSkip('left'); }
+  else if(frac > 0.72){ nudgeYear(10); flashSkip('right'); }
+});
+let lastTapTime = 0, lastTapX = 0;
+mapEl.addEventListener('touchend', (e)=>{
+  const now = Date.now();
+  const touch = e.changedTouches[0];
+  const rect = mapEl.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  if(now - lastTapTime < 350 && Math.abs(x - lastTapX) < 40){
+    const frac = x / rect.width;
+    if(frac < 0.28){ nudgeYear(-10); flashSkip('left'); }
+    else if(frac > 0.72){ nudgeYear(10); flashSkip('right'); }
+    lastTapTime = 0;
+  } else {
+    lastTapTime = now; lastTapX = x;
+  }
 });
 
 /* ===================== INIT ===================== */
-refreshAllTexts();
-renderEntityChecks();
-renderLegend();
-renderStripLists();
-updateLayout();
-goToYear(YMIN);
+function safeRun(fn, label){
+  try { fn(); } catch(e){ console.error('Error en ' + label + ':', e); }
+}
+safeRun(refreshAllTexts, 'refreshAllTexts');
+safeRun(renderEntityChecks, 'renderEntityChecks');
+safeRun(renderLegend, 'renderLegend');
+safeRun(renderStripLists, 'renderStripLists');
+safeRun(updateLayout, 'updateLayout');
+safeRun(()=>goToYear(YMIN), 'goToYear');
+
+// Alguns navegadors mòbils restauren l'estat del formulari (bfcache) en tornar enrere,
+// deixant el slider en un any antic encara que la pàgina es recarregui visualment: forcem el reset.
+window.addEventListener('pageshow', (e)=>{
+  if(e.persisted){
+    playing = false; clearInterval(timer); document.getElementById('playBtn').textContent = '▶';
+    goToYear(YMIN);
+    setTimeout(()=> map.invalidateSize(), 200);
+  }
+});
 </script>
 </body>
 </html>
