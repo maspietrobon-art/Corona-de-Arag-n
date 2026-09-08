@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.41)</title>
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.43)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -171,6 +171,10 @@
 
   .divmark{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     font-size:15px; cursor:pointer;}
+  /* possessions personals del monarca: romb (diamant) en lloc de cercle buit — llenguatge visual clar i net */
+  .personal-mark{width:20px; height:20px; transform:rotate(45deg); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.2); opacity:.72;}
+  .personal-mark .inner-crown{transform:rotate(-45deg); font-size:9px; line-height:1;}
   @keyframes markPulse{ 0%{ transform:scale(0.3); opacity:0.3; } 60%{ transform:scale(1.35); opacity:1; } 100%{ transform:scale(1); opacity:1; } }
   .divmark.pulse{ animation:markPulse .5s ease-out; }
   .m-won{background:radial-gradient(circle,#fff1a8,#ffb032 45%,#c62828 78%); color:#fff;}
@@ -191,7 +195,7 @@
   <header>
     <div id="headerTitleBlock">
       <h1 id="titleTxt">La Corona d'Aragó</h1>
-      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.41</span>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.43</span>
     </div>
     <div id="langToggle">
       <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
@@ -230,6 +234,7 @@
   <aside class="mainside">
     <h2 id="lblVisual">Visualització</h2>
     <label class="cat-row"><input type="checkbox" id="allTimeToggle"><span class="swatch" style="background:#b8963a;"></span><b><span id="lblAllTime">Mostra totes les èpoques</span></b> <span id="lblAllTimeSub">(ignora l'any)</span></label>
+    <label class="cat-row"><input type="checkbox" id="personalToggle" checked><span class="swatch" style="background:#8a7a5a55;border:2px solid #8a7a5a;border-radius:0;transform:rotate(45deg);width:10px;height:10px;"></span><span id="lblPersonalToggle">Mostra possessions personals del monarca</span></label>
 
     <h2 id="lblEntitats">Entitats sobiranes (territoris)</h2>
     <div id="entityChecks"></div>
@@ -292,7 +297,7 @@
 
 <script>
 /* =======================================================================
-   DADES — esborrany v0.41. Camps bilingües amb sufix _ca / _es.
+   DADES — esborrany v0.43. Camps bilingües amb sufix _ca / _es.
    ======================================================================= */
 const ENTITATS = {
   "Comtat de Barcelona": {color:"#8f1626", label_ca:"Comtat de Barcelona (pre-unió)", label_es:"Condado de Barcelona (pre-unión)", noFilter:1},
@@ -2012,6 +2017,116 @@ const TERRITORIS = [
   note_ca:"Ciutat episcopal fronterera amb Portugal. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ciutat episcopal fronterera amb Portugal. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
  {n_ca:"Verín", n_es:"Verín", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1707, lat:41.9364, lon:-7.4356,
   note_ca:"Vila gallega fronterera amb Portugal. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila gallega fronterera amb Portugal. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
+,
+ /* --- distribucio addicional i uniforme: interior valencia, Pirineu aragones i catala, mes Balears --- */
+ {n_ca:"Requena", n_es:"Requena", ent:"Regne de València", ys:1238, ye:1516, lat:39.4886, lon:-1.0967,
+  note_ca:"Comarca interior valenciana.", note_es:"Comarca interior valenciana."},
+ {n_ca:"Requena (Monarquia Hispànica)", n_es:"Requena (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.4886, lon:-1.0967,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Utiel (comarca)", n_es:"Utiel (comarca)", ent:"Regne de València", ys:1238, ye:1516, lat:39.5667, lon:-1.2,
+  note_ca:"Comarca del vi interior valencià.", note_es:"Comarca del vino interior valenciano."},
+ {n_ca:"Utiel (comarca) (Monarquia Hispànica)", n_es:"Utiel (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.5667, lon:-1.2,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Segorbe", n_es:"Segorbe", ent:"Regne de València", ys:1245, ye:1516, lat:39.85, lon:-0.4833,
+  note_ca:"Antiga seu episcopal de l'Alt Palància.", note_es:"Antigua sede episcopal del Alto Palancia."},
+ {n_ca:"Segorbe (Monarquia Hispànica)", n_es:"Segorbe (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.85, lon:-0.4833,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Vila-real", n_es:"Villarreal", ent:"Regne de València", ys:1274, ye:1516, lat:39.9386, lon:-0.1006,
+  note_ca:"Vila fundada per Jaume I el Just.", note_es:"Villa fundada por Jaime I el Justo."},
+ {n_ca:"Vila-real (Monarquia Hispànica)", n_es:"Villarreal (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:39.9386, lon:-0.1006,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ontinyent (comarca)", n_es:"Onteniente (comarca)", ent:"Regne de València", ys:1244, ye:1516, lat:38.8214, lon:-0.6089,
+  note_ca:"Comarca de la Vall d'Albaida.", note_es:"Comarca del Valle de Albaida."},
+ {n_ca:"Ontinyent (comarca) (Monarquia Hispànica)", n_es:"Onteniente (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:38.8214, lon:-0.6089,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Cocentaina", n_es:"Cocentaina", ent:"Regne de València", ys:1245, ye:1516, lat:38.7386, lon:-0.4344,
+  note_ca:"Vila comtal del Comtat.", note_es:"Villa condal del Comtat."},
+ {n_ca:"Cocentaina (Monarquia Hispànica)", n_es:"Cocentaina (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:38.7386, lon:-0.4344,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Jaca (comarca)", n_es:"Jaca (comarca)", ent:"Regne d'Aragó", ys:1035, ye:1516, lat:42.5709, lon:-0.5497,
+  note_ca:"Alt Aragó pirinenc.", note_es:"Alto Aragón pirenaico."},
+ {n_ca:"Jaca (comarca) (Monarquia Hispànica)", n_es:"Jaca (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.5709, lon:-0.5497,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sabiñánigo", n_es:"Sabiñánigo", ent:"Regne d'Aragó", ys:1097, ye:1516, lat:42.5186, lon:-0.3644,
+  note_ca:"Vila pirinenca del Serrablo.", note_es:"Villa pirenaica del Serrablo."},
+ {n_ca:"Sabiñánigo (Monarquia Hispànica)", n_es:"Sabiñánigo (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.5186, lon:-0.3644,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Boltaña", n_es:"Boltaña", ent:"Regne d'Aragó", ys:1090, ye:1516, lat:42.4472, lon:0.0692,
+  note_ca:"Antiga capital del Sobrarbe.", note_es:"Antigua capital del Sobrarbe."},
+ {n_ca:"Boltaña (Monarquia Hispànica)", n_es:"Boltaña (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.4472, lon:0.0692,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Aínsa", n_es:"Aínsa", ent:"Regne d'Aragó", ys:1300, ye:1516, lat:42.4167, lon:0.1417,
+  note_ca:"Capital històrica del Sobrarbe.", note_es:"Capital histórica del Sobrarbe."},
+ {n_ca:"Aínsa (Monarquia Hispànica)", n_es:"Aínsa (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.4167, lon:0.1417,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Benasc", n_es:"Benasque", ent:"Regne d'Aragó", ys:1300, ye:1516, lat:42.6083, lon:0.5192,
+  note_ca:"Vall pirinenca fronterera amb Occitània.", note_es:"Valle pirenaico fronterizo con Occitania."},
+ {n_ca:"Benasc (Monarquia Hispànica)", n_es:"Benasque (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.6083, lon:0.5192,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Graus", n_es:"Graus", ent:"Regne d'Aragó", ys:1083, ye:1516, lat:42.1836, lon:0.3378,
+  note_ca:"Vila de la Ribagorça, escenari de la batalla de 1063.", note_es:"Villa de la Ribagorza, escenario de la batalla de 1063."},
+ {n_ca:"Graus (Monarquia Hispànica)", n_es:"Graus (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.1836, lon:0.3378,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Benavarri", n_es:"Benabarre", ent:"Regne d'Aragó", ys:1062, ye:1516, lat:42.1064, lon:0.4753,
+  note_ca:"Antiga capital de la Ribagorça.", note_es:"Antigua capital de la Ribagorza."},
+ {n_ca:"Benavarri (Monarquia Hispànica)", n_es:"Benabarre (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1707, lat:42.1064, lon:0.4753,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Vielha", n_es:"Vielha", ent:"Comtat de Barcelona", ys:1175, ye:1516, lat:42.7019, lon:0.7958,
+  note_ca:"Capital de la Vall d'Aran.", note_es:"Capital del Valle de Arán."},
+ {n_ca:"Vielha (Monarquia Hispànica)", n_es:"Vielha (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.7019, lon:0.7958,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Puigcerdà (comarca)", n_es:"Puigcerdà (comarca)", ent:"Principat de Catalunya", ys:1177, ye:1516, lat:42.4331, lon:1.928,
+  note_ca:"Cerdanya, frontera amb França.", note_es:"Cerdaña, frontera con Francia."},
+ {n_ca:"Puigcerdà (comarca) (Monarquia Hispànica)", n_es:"Puigcerdà (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.4331, lon:1.928,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sort", n_es:"Sort", ent:"Comtat de Pallars Sobirà", ys:1000, ye:1516, lat:42.4131, lon:1.13,
+  note_ca:"Capital del Pallars Sobirà.", note_es:"Capital del Pallars Sobirà."},
+ {n_ca:"Sort (Monarquia Hispànica)", n_es:"Sort (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.4131, lon:1.13,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Tremp", n_es:"Tremp", ent:"Comtat de Pallars Jussà", ys:1000, ye:1516, lat:42.1667, lon:0.8944,
+  note_ca:"Capital del Pallars Jussà.", note_es:"Capital del Pallars Jussà."},
+ {n_ca:"Tremp (Monarquia Hispànica)", n_es:"Tremp (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.1667, lon:0.8944,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Balaguer (comarca)", n_es:"Balaguer (comarca)", ent:"Comtat d'Urgell", ys:1000, ye:1516, lat:41.7903, lon:0.8075,
+  note_ca:"Capital de la Noguera.", note_es:"Capital de la Noguera."},
+ {n_ca:"Balaguer (comarca) (Monarquia Hispànica)", n_es:"Balaguer (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.7903, lon:0.8075,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Solsona (comarca)", n_es:"Solsona (comarca)", ent:"Comtat d'Urgell", ys:950, ye:1516, lat:41.9942, lon:1.5169,
+  note_ca:"Solsonès.", note_es:"Solsonés."},
+ {n_ca:"Solsona (comarca) (Monarquia Hispànica)", n_es:"Solsona (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:41.9942, lon:1.5169,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Berga (comarca)", n_es:"Berga (comarca)", ent:"Principat de Catalunya", ys:798, ye:1516, lat:42.105, lon:1.8458,
+  note_ca:"Berguedà pirinenc.", note_es:"Bergadá pirenaico."},
+ {n_ca:"Berga (comarca) (Monarquia Hispànica)", n_es:"Berga (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.105, lon:1.8458,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ripoll (comarca)", n_es:"Ripoll (comarca)", ent:"Principat de Catalunya", ys:879, ye:1516, lat:42.2011, lon:2.1906,
+  note_ca:"Ripollès.", note_es:"Ripollés."},
+ {n_ca:"Ripoll (comarca) (Monarquia Hispànica)", n_es:"Ripoll (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.2011, lon:2.1906,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Olot", n_es:"Olot", ent:"Comtat de Besalú", ys:1000, ye:1516, lat:42.1817, lon:2.49,
+  note_ca:"Capital de la Garrotxa.", note_es:"Capital de la Garrotxa."},
+ {n_ca:"Olot (Monarquia Hispànica)", n_es:"Olot (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.1817, lon:2.49,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ciutadella (comarca)", n_es:"Ciudadela (comarca)", ent:"Regne de Mallorca (Corona)", ys:1287, ye:1516, lat:40.0, lon:3.8378,
+  note_ca:"Antiga capital de Menorca.", note_es:"Antigua capital de Menorca."},
+ {n_ca:"Ciutadella (comarca) (Monarquia Hispànica)", n_es:"Ciudadela (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:40.0, lon:3.8378,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Es Mercadal", n_es:"Es Mercadal", ent:"Regne de Mallorca (Corona)", ys:1287, ye:1516, lat:39.9928, lon:4.0972,
+  note_ca:"Centre geogràfic de Menorca.", note_es:"Centro geográfico de Menorca."},
+ {n_ca:"Es Mercadal (Monarquia Hispànica)", n_es:"Es Mercadal (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.9928, lon:4.0972,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Ferreries", n_es:"Ferreries", ent:"Regne de Mallorca (Corona)", ys:1287, ye:1516, lat:39.9903, lon:3.9928,
+  note_ca:"Vila de Menorca.", note_es:"Villa de Menorca."},
+ {n_ca:"Ferreries (Monarquia Hispànica)", n_es:"Ferreries (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.9903, lon:3.9928,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Es Castell", n_es:"Es Castell", ent:"Regne de Mallorca (Corona)", ys:1287, ye:1516, lat:39.8797, lon:4.2831,
+  note_ca:"Extrem est de Menorca.", note_es:"Extremo este de Menorca."},
+ {n_ca:"Es Castell (Monarquia Hispànica)", n_es:"Es Castell (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:39.8797, lon:4.2831,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
+ {n_ca:"Sant Josep (Eivissa)", n_es:"San José (Ibiza)", ent:"Regne de Mallorca (Corona)", ys:1235, ye:1516, lat:38.9219, lon:1.3006,
+  note_ca:"Vila del sud d'Eivissa.", note_es:"Villa del sur de Ibiza."},
+ {n_ca:"Sant Josep (Eivissa) (Monarquia Hispànica)", n_es:"San José (Ibiza) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1715, lat:38.9219, lon:1.3006,
+  note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
 ];
 
 const BATALLES = [
@@ -2495,8 +2610,8 @@ let currentYear = 1137;
 let activeEntities = new Set(Object.keys(ENTITATS));
 
 const STR = {
-  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.41",
-      visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)",
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.43",
+      visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)", personalToggle:"Mostra possessions personals del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Sortir", support:"Suport",
       supportTitle:"Sosté el projecte",
       supportBody:"Aquest mapa neix de centenars d'hores de recerca històrica independent. Si t'ha agradat i vols ajudar-nos a continuar millorant-lo i ampliant-lo, qualsevol contribució és benvinguda i apreciada.",
@@ -2513,9 +2628,9 @@ const STR = {
       fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
       guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
       legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
-      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.41): cal verificació i ampliació."},
-  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.41",
-      visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)",
+      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.43): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.43",
+      visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)", personalToggle:"Mostrar posesiones personales del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Salir", support:"Apoyo",
       supportTitle:"Apoya el proyecto",
       supportBody:"Este mapa nace de cientos de horas de investigación histórica independiente. Si te ha gustado y quieres ayudarnos a seguir mejorándolo y ampliándolo, cualquier contribución es bienvenida y apreciada.",
@@ -2532,7 +2647,7 @@ const STR = {
       fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
       guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
       legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
-      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.41): requieren verificación y ampliación."}
+      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.43): requieren verificación y ampliación."}
 };
 
 function setLang(l){
@@ -2553,6 +2668,7 @@ function refreshAllTexts(){
   document.getElementById('lblVisual').textContent = s.visual;
   document.getElementById('lblAllTime').textContent = s.allTime;
   document.getElementById('lblAllTimeSub').textContent = s.allTimeSub;
+  document.getElementById('lblPersonalToggle').textContent = s.personalToggle;
   document.getElementById('lblFullscreen').textContent = s.fullscreen;
   document.getElementById('lblExitFullscreen').textContent = s.exitFullscreen;
   document.getElementById('lblSupport').textContent = s.support;
@@ -2619,7 +2735,7 @@ function renderLegend(){
     const label = LANG==='ca' ? ent.label_ca : ent.label_es;
     html += `<div class="lg-row"><span class="lg-dot" style="background:${ent.color}"></span>${label}</div>`;
   });
-  html += `<div class="lg-row"><span class="lg-dot" style="background:#f2ead9;border:2px dashed #8a7a5a;"></span>${LANG==='ca'?"Possessió personal del monarca (no Corona)":"Posesión personal del monarca (no Corona)"}</div>`;
+  html += `<div class="lg-row"><span class="lg-dot" style="background:#8a7a5a55;border:2px solid #8a7a5a; border-radius:0; transform:rotate(45deg); width:10px; height:10px;"></span>${LANG==='ca'?"Possessió personal del monarca (no Corona)":"Posesión personal del monarca (no Corona)"}</div>`;
   html += `<h3>${s.legendBatalles}</h3>`;
   const items = [
     ['⚔','#c62828', LANG==='ca'?'Batalla guanyada':'Batalla ganada'],
@@ -2687,6 +2803,8 @@ function battleVisible(b){
 }
 
 const allTimeToggle = document.getElementById('allTimeToggle');
+const personalToggle = document.getElementById('personalToggle');
+personalToggle.addEventListener('change', updateMap);
 const BATTLE_WINDOW = 3; // anys de "persistència visual" d'un esdeveniment puntual al voltant del seu any exacte
 
 function updateMap(){
@@ -2695,25 +2813,29 @@ function updateMap(){
   TERRITORIS.forEach(t=>{
     if(!allTime && (currentYear < t.ys || currentYear > t.ye)) return;
     if(!activeEntities.has(t.ent)) return;
+    if(t.personal && !personalToggle.checked) return;
     const ent = ENTITATS[t.ent];
     const isNominal = !!t.nominal;
     const isPersonal = !!t.personal;
-    let markerOpts;
-    if(isPersonal){
-      // possessió personal del monarca, NO territori formal de la Corona d'Aragó:
-      // cercle buit/blanquinós amb la vora del color de l'entitat, per marcar la diferència d'estatus.
-      markerOpts = {radius:8, color:ent.color, weight:2, fillColor:'#f2ead9', fillOpacity:0.55, dashArray:'2,3'};
-    } else {
-      markerOpts = {radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
-        fillOpacity: isNominal ? 0.35 : 0.85, dashArray: isNominal ? '3,3' : null};
-    }
-    const marker = L.circleMarker([t.lat, t.lon], markerOpts);
     const name = LANG==='ca' ? t.n_ca : t.n_es;
     const note = LANG==='ca' ? t.note_ca : t.note_es;
     const entLabel = LANG==='ca' ? ent.label_ca : ent.label_es;
     const nominalTag = isNominal ? (LANG==='ca' ? '<br><i>(sobirania nominal / pretesa, no dominada efectivament)</i>' : '<br><i>(soberanía nominal / pretendida, no dominada efectivamente)</i>') : '';
     const personalTag = isPersonal ? (LANG==='ca' ? '<br><i>(possessió personal del monarca; no és territori formal de la Corona d\'Aragó)</i>' : '<br><i>(posesión personal del monarca; no es territorio formal de la Corona de Aragón)</i>') : '';
-    marker.bindPopup(`<div class="popup-${LANG}"><b>${name}</b><br>${entLabel} (${t.ys}\u2013${t.ye})<br>${note}${nominalTag}${personalTag}</div>`);
+    const popupHtml = `<div class="popup-${LANG}"><b>${name}</b><br>${entLabel} (${t.ys}\u2013${t.ye})<br>${note}${nominalTag}${personalTag}</div>`;
+
+    let marker;
+    if(isPersonal){
+      // possessió personal del monarca, NO territori formal de la Corona d'Aragó:
+      // romb (diamant) semitransparent en el color de l'entitat — llenguatge visual net i diferenciat del cercle ple.
+      const icon = L.divIcon({className:'', html:`<div class="personal-mark" style="background:${ent.color}2e; border:2px solid ${ent.color}bb;"></div>`, iconSize:[20,20], iconAnchor:[10,10]});
+      marker = L.marker([t.lat, t.lon], {icon});
+    } else {
+      const markerOpts = {radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
+        fillOpacity: isNominal ? 0.35 : 0.85, dashArray: isNominal ? '3,3' : null};
+      marker = L.circleMarker([t.lat, t.lon], markerOpts);
+    }
+    marker.bindPopup(popupHtml);
     marker.addTo(territoriLayer);
   });
 
