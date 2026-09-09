@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.46)</title>
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.48)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -195,7 +195,7 @@
   <header>
     <div id="headerTitleBlock">
       <h1 id="titleTxt">La Corona d'Aragó</h1>
-      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.46</span>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.48</span>
     </div>
     <div id="langToggle">
       <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
@@ -297,7 +297,7 @@
 
 <script>
 /* =======================================================================
-   DADES — esborrany v0.46. Camps bilingües amb sufix _ca / _es.
+   DADES — esborrany v0.48. Camps bilingües amb sufix _ca / _es.
    ======================================================================= */
 const ENTITATS = {
   "Comtat de Barcelona": {color:"#8f1626", label_ca:"Comtat de Barcelona (pre-unió)", label_es:"Condado de Barcelona (pre-unión)", noFilter:1},
@@ -309,6 +309,7 @@ const ENTITATS = {
   "Comtat de Cerdanya":  {color:"#2f8f7a", label_ca:"Comtat de Cerdanya (pre-unió)", label_es:"Condado de Cerdaña (pre-unión)", noFilter:1},
   "Comtat de Rosselló":  {color:"#a13a2e", label_ca:"Comtat de Rosselló (pre-unió)", label_es:"Condado de Rosellón (pre-unión)", noFilter:1},
   "Comtat de Conflent":  {color:"#3a7ab5", label_ca:"Comtat de Conflent (pre-unió)", label_es:"Condado de Conflent (pre-unión)", noFilter:1},
+  "Comtat de Berga":     {color:"#5a8f9e", label_ca:"Comtat de Berga (pre-unió)", label_es:"Condado de Berga (pre-unión)", noFilter:1},
   "Comtat de Besalú":    {color:"#c9a227", label_ca:"Comtat de Besalú", label_es:"Condado de Besalú", noFilter:1},
   "Comtat d'Empúries (pre-unió)": {color:"#5a8f4a", label_ca:"Comtat d'Empúries (pre-unió)", label_es:"Condado de Ampurias (pre-unión)", noFilter:1},
   "Marca Hispànica":     {color:"#9a9a9a", label_ca:"Marca Hispànica (carolíngia)", label_es:"Marca Hispánica (carolingia)", noFilter:1},
@@ -341,18 +342,18 @@ const TERRITORIS = [
   note_ca:"Repoblat i unit per Guifré el Pilós.", note_es:"Repoblado y unido por Wifredo el Velloso."},
  {n_ca:"Comtat d'Urgell", n_es:"Condado de Urgel", ent:"Comtat d'Urgell", ys:900, ye:1413, lat:41.9349, lon:1.1281,
   note_ca:"Comtat pirinenc amb autonomia perllongada; incorporat a la Corona el 1413.", note_es:"Condado pirenaico con autonomía prolongada; incorporado a la Corona en 1413."},
- {n_ca:"Comtat de Pallars Sobirà", n_es:"Condado de Pallars Sobirà", ent:"Comtat de Pallars Sobirà", ys:872, ye:1500, lat:42.5667, lon:1.1500,
-  note_ca:"Comtat pirinenc alt, amb capital eventual a Sort.", note_es:"Condado pirenaico alto, con capital eventual en Sort."},
- {n_ca:"Comtat de Pallars Jussà", n_es:"Condado de Pallars Jussà", ent:"Comtat de Pallars Jussà", ys:941, ye:1500, lat:42.2167, lon:0.9167,
-  note_ca:"Comtat pirinenc baix, amb capital eventual a Talarn/Tremp.", note_es:"Condado pirenaico bajo, con capital eventual en Talarn/Tremp."},
+ {n_ca:"Comtat de Pallars Sobirà", n_es:"Condado de Pallars Sobirà", ent:"Comtat de Pallars Sobirà", ys:872, ye:1491, lat:42.5667, lon:1.1500,
+  note_ca:"Comtat pirinenc alt, amb capital eventual a Sort; l'últim dels comtats catalans en passar a mans directes del monarca, amb Ferran el Catòlic a finals del segle XV.", note_es:"Condado pirenaico alto, con capital eventual en Sort; el último de los condados catalanes en pasar a manos directas del monarca, con Fernando el Católico a finales del siglo XV."},
+ {n_ca:"Comtat de Pallars Jussà", n_es:"Condado de Pallars Jussà", ent:"Comtat de Pallars Jussà", ys:941, ye:1193, lat:42.2167, lon:0.9167,
+  note_ca:"Comtat pirinenc baix, amb capital eventual a Talarn/Tremp; dividit del Pallars Sobirà el 1110 i annexionat per Barcelona el 1193.", note_es:"Condado pirenaico bajo, con capital eventual en Talarn/Tremp; dividido del Pallars Sobirà en 1110 y anexionado por Barcelona en 1193."},
  {n_ca:"Comtat d'Empúries", n_es:"Condado de Ampurias", ent:"Comtat d'Empúries (pre-unió)", ys:817, ye:1401, lat:42.1339, lon:3.1219,
   note_ca:"Incorporat definitivament a la Corona el 1401.", note_es:"Incorporado definitivamente a la Corona en 1401."},
  {n_ca:"Comtat de Cerdanya", n_es:"Condado de Cerdaña", ent:"Comtat de Cerdanya", ys:817, ye:1117, lat:42.4167, lon:1.9667,
   note_ca:"Unit a Barcelona el 1117.", note_es:"Unido a Barcelona en 1117."},
  {n_ca:"Comtat de Rosselló", n_es:"Condado de Rosellón", ent:"Comtat de Rosselló", ys:900, ye:1172, lat:42.6986, lon:2.8956,
   note_ca:"Unit definitivament a Barcelona el 1172.", note_es:"Unido definitivamente a Barcelona en 1172."},
- {n_ca:"Comtat de Conflent", n_es:"Condado de Conflent", ent:"Comtat de Conflent", ys:868, ye:1117, lat:42.5833, lon:2.2667,
-  note_ca:"Comtat pirinenc originari, sovint unit a Cerdanya; incorporat a Barcelona el 1117.", note_es:"Condado pirenaico originario, a menudo unido a Cerdaña; incorporado a Barcelona en 1117."},
+ {n_ca:"Comtat de Conflent", n_es:"Condado de Conflent", ent:"Comtat de Conflent", ys:868, ye:897, lat:42.5833, lon:2.2667,
+  note_ca:"Comtat pirinenc originari, independent fins cap al 897, quan s'incorpora al comtat de Cerdanya (que al seu torn s'unirà a Barcelona el 1117).", note_es:"Condado pirenaico originario, independiente hasta cerca del 897, cuando se incorpora al condado de Cerdaña (que a su vez se unirá a Barcelona en 1117)."},
  {n_ca:"Rosselló i Cerdanya (dins la Corona)", n_es:"Rosellón y Cerdaña (dentro de la Corona)", ent:"Principat de Catalunya", ys:1172, ye:1462, lat:42.6986, lon:2.8956,
   note_ca:"Territori estable de la Corona fins a l'empenyorament del 1462.", note_es:"Territorio estable de la Corona hasta el empeño de 1462."},
  {n_ca:"Rosselló i Cerdanya (empenyorats a França)", n_es:"Rosellón y Cerdaña (empeñados a Francia)", ent:"Regne de França", ys:1462, ye:1493, lat:42.6986, lon:2.8956,
@@ -625,8 +626,10 @@ const TERRITORIS = [
   note_ca:"Repoblada a l'entorn de l'any 800 com a plaça de frontera.", note_es:"Repoblada en torno al año 800 como plaza de frontera."},
  {n_ca:"Cardona (castell)", n_es:"Cardona (castillo)", ent:"Comtats catalans", ys:798, ye:1516, lat:41.9133, lon:1.6803,
   note_ca:"Castell fronterer aixecat cap al 798; futur ducat.", note_es:"Castillo fronterizo alzado hacia 798; futuro ducado."},
- {n_ca:"Berga", n_es:"Berga", ent:"Comtats catalans", ys:798, ye:1516, lat:42.105, lon:1.8458,
-  note_ca:"Plaça forta documentada des de 798.", note_es:"Plaza fuerte documentada desde 798."},
+ {n_ca:"Berga", n_es:"Berga", ent:"Comtat de Berga", ys:798, ye:1117, lat:42.105, lon:1.8458,
+  note_ca:"Plaça forta documentada des de 798; comtat independent fins que Barcelona l'annexiona el 1117.", note_es:"Plaza fuerte documentada desde 798; condado independiente hasta que Barcelona lo anexiona en 1117."},
+ {n_ca:"Berga (dins el comtat de Barcelona)", n_es:"Berga (dentro del condado de Barcelona)", ent:"Principat de Catalunya", ys:1117, ye:1516, lat:42.105, lon:1.8458,
+  note_ca:"Annexionada pel comtat de Barcelona el 1117.", note_es:"Anexionada por el condado de Barcelona en 1117."},
  {n_ca:"Seu d'Urgell (seu episcopal)", n_es:"Seo de Urgel (sede episcopal)", ent:"Comtats catalans", ys:820, ye:1516, lat:42.3583, lon:1.4611,
   note_ca:"Una de les seus episcopals més antigues dels Pirineus catalans.", note_es:"Una de las sedes episcopales más antiguas de los Pirineos catalanes."},
  {n_ca:"Ripoll (monestir de Santa Maria)", n_es:"Ripoll (monasterio de Santa María)", ent:"Comtats catalans", ys:879, ye:1516, lat:42.2011, lon:2.1906,
@@ -2069,12 +2072,16 @@ const TERRITORIS = [
   note_ca:"Cerdanya, frontera amb França.", note_es:"Cerdaña, frontera con Francia."},
  {n_ca:"Puigcerdà (comarca) (Monarquia Hispànica)", n_es:"Puigcerdà (comarca) (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.4331, lon:1.928,
   note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
- {n_ca:"Sort", n_es:"Sort", ent:"Comtat de Pallars Sobirà", ys:1000, ye:1516, lat:42.4131, lon:1.13,
-  note_ca:"Capital del Pallars Sobirà.", note_es:"Capital del Pallars Sobirà."},
+ {n_ca:"Sort", n_es:"Sort", ent:"Comtat de Pallars Sobirà", ys:1000, ye:1491, lat:42.4131, lon:1.13,
+  note_ca:"Capital del Pallars Sobirà, independent fins al 1491.", note_es:"Capital del Pallars Sobirà, independiente hasta 1491."},
+ {n_ca:"Sort (Principat de Catalunya)", n_es:"Sort (Principado de Cataluña)", ent:"Principat de Catalunya", ys:1491, ye:1516, lat:42.4131, lon:1.13,
+  note_ca:"Passa a mans directes del monarca el 1491.", note_es:"Pasa a manos directas del monarca en 1491."},
  {n_ca:"Sort (Monarquia Hispànica)", n_es:"Sort (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.4131, lon:1.13,
   note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
- {n_ca:"Tremp", n_es:"Tremp", ent:"Comtat de Pallars Jussà", ys:1000, ye:1516, lat:42.1667, lon:0.8944,
-  note_ca:"Capital del Pallars Jussà.", note_es:"Capital del Pallars Jussà."},
+ {n_ca:"Tremp", n_es:"Tremp", ent:"Comtat de Pallars Jussà", ys:1000, ye:1193, lat:42.1667, lon:0.8944,
+  note_ca:"Capital del Pallars Jussà, independent fins al 1193.", note_es:"Capital del Pallars Jussà, independiente hasta 1193."},
+ {n_ca:"Tremp (Principat de Catalunya)", n_es:"Tremp (Principado de Cataluña)", ent:"Principat de Catalunya", ys:1193, ye:1516, lat:42.1667, lon:0.8944,
+  note_ca:"Annexionat per Barcelona el 1193.", note_es:"Anexionado por Barcelona en 1193."},
  {n_ca:"Tremp (Monarquia Hispànica)", n_es:"Tremp (Monarquía Hispánica)", ent:"Regne d'Espanya", ys:1516, ye:1716, lat:42.1667, lon:0.8944,
   note_ca:"Continua com a part de la Monarquia Hispànica.", note_es:"Continúa como parte de la Monarquía Hispánica."},
  {n_ca:"Balaguer (comarca)", n_es:"Balaguer (comarca)", ent:"Comtat d'Urgell", ys:1000, ye:1516, lat:41.7903, lon:0.8075,
@@ -3011,6 +3018,20 @@ const TERRITORIS = [
   note_ca:"Vila de l'Alentejo central. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640).", note_es:"Vila de l'Alentejo central. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640)."},
  {n_ca:"Arraiolos", n_es:"Arraiolos", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:38.7333, lon:-7.9833,
   note_ca:"Vila de l'Alentejo, famosa pels tapissos. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640).", note_es:"Vila de l'Alentejo, famosa pels tapissos. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640)."},
+,
+ /* --- completant la llista de 24 territoris occitans de la mapa 'Crown of Aragon' (heraldry.art) que faltaven --- */
+ {n_ca:"Andorra (coprincipat amb Urgell)", n_es:"Andorra (coprincipado con Urgel)", ent:"Comtat d'Urgell", personal:1, ys:1133, ye:1278, lat:42.5063, lon:1.5218,
+  note_ca:"Sota la influència directa del comtat/bisbat d'Urgell fins al Pareatge de 1278, que en formalitza la sobirania compartida amb el comtat de Foix.", note_es:"Bajo la influencia directa del condado/obispado de Urgel hasta el Pareaje de 1278, que formaliza su soberanía compartida con el condado de Foix."},
+ {n_ca:"Vescomtat de Lodeva", n_es:"Vizcondado de Lodève", ent:"Comtat de Barcelona", personal:1, ys:1179, ye:1213, lat:43.7311, lon:3.3178,
+  note_ca:"Petit vescomtat dins la xarxa de vassallatges occitans d'Alfons II.", note_es:"Pequeño vizcondado dentro de la red de vasallajes occitanos de Alfonso II."},
+ {n_ca:"Senyoria d'Anduze", n_es:"Señorío de Anduze", ent:"Comtat de Barcelona", personal:1, ys:1179, ye:1213, lat:44.0553, lon:3.9861,
+  note_ca:"Senyoria de les Cevenes dins l'àrea d'influència catalanoaragonesa.", note_es:"Señorío de las Cevenas dentro del área de influencia catalanoaragonesa."},
+ {n_ca:"Comtat de Vivarais", n_es:"Condado de Vivarais", ent:"Comtat de Barcelona", personal:1, ys:1179, ye:1213, lat:44.7333, lon:4.3667,
+  note_ca:"Extrem nord-oriental de l'àrea d'influència occitana catalanoaragonesa.", note_es:"Extremo noreste del área de influencia occitana catalanoaragonesa."},
+ {n_ca:"Comtat de Diois", n_es:"Condado de Diois", ent:"Comtat de Barcelona", personal:1, ys:1179, ye:1213, lat:44.7667, lon:5.3667,
+  note_ca:"Petit comtat alpí dins la xarxa d'aliances d'Alfons II.", note_es:"Pequeño condado alpino dentro de la red de alianzas de Alfonso II."},
+ {n_ca:"Marquesat de Provença", n_es:"Marquesado de Provenza", ent:"Comtat de Barcelona", personal:1, ys:1112, ye:1131, lat:44.0, lon:5.5,
+  note_ca:"Títol separat del comtat de Provença, també sota la influència de la Casa de Barcelona en el mateix període.", note_es:"Título separado del condado de Provenza, también bajo la influencia de la Casa de Barcelona en el mismo período."},
 ];
 
 const BATALLES = [
@@ -3408,6 +3429,7 @@ const CRONOLOGIA = [
  {ys:1283, ca:"Desafiament de Bordeus: Pere el Gran esquiva la trampa de Carles d'Anjou.", es:"Desafío de Burdeos: Pedro el Grande esquiva la trampa de Carlos de Anjou."},
  {ys:1285, ca:"Croada francesa contra Catalunya: caiguda de Girona i desfeta final al Coll de Panissars.", es:"Cruzada francesa contra Cataluña: caída de Girona y derrota final en el Coll de Panissars."},
  {ys:1283, ca:"La noblesa aragonesa exigeix l'expulsió dels oficials no aragonesos de la cort.", es:"La nobleza aragonesa exige la expulsión de los oficiales no aragoneses de la corte."},
+ {ys:1283, ca:"Les Corts catalanes limiten el rei a usar únicament el títol comtal de Barcelona, mai el de rei, dins de Catalunya.", es:"Las Cortes catalanas limitan al rey a usar únicamente el título condal de Barcelona, nunca el de rey, dentro de Cataluña."},
  {ys:1279, ca:"Pere III reclama la sobirania sobre el Regne de Mallorca del seu oncle.", es:"Pedro III reclama la soberanía sobre el Reino de Mallorca de su tío."},
  {ys:1285, ca:"El papa concedeix (sense efecte) la corona d'Aragó a Carles de Valois.", es:"El papa concede (sin efecto) la corona de Aragón a Carlos de Valois."},
  {ys:1287, ca:"Conquesta de Menorca; Unió Aragonesa obté el Privilegi de la Unió.", es:"Conquista de Menorca; Unión Aragonesa obtiene el Privilegio de la Unión."},
@@ -3434,6 +3456,7 @@ const CRONOLOGIA = [
  {ys:1351, ca:"Aliança amb Venècia contra Génova.", es:"Alianza con Venecia contra Génova."},
  {ys:1353, ca:"Victòria naval decisiva sobre Génova davant Sardenya.", es:"Victoria naval decisiva sobre Génova frente a Cerdeña."},
  {ys:1355, ca:"Sardenya rep Corts pròpies de model català.", es:"Cerdeña recibe Cortes propias de modelo catalán."},
+ {ys:1376, ca:"Corts de Montsó: es constitueixen formalment els tres braços de Catalunya (noble, eclesiàstic i reial).", es:"Cortes de Monzón: se constituyen formalmente los tres brazos de Cataluña (noble, eclesiástico y real)."},
  {ys:1363, ca:"Creació de les diputacions permanents d'Aragó, Catalunya i València.", es:"Creación de las diputaciones permanentes de Aragón, Cataluña y Valencia."},
  {ys:1380, ca:"Pere III assumeix la sobirania directa d'Atenes i Neopàtria.", es:"Pedro III asume la soberanía directa de Atenas y Neopatria."},
  {ys:1388, ca:"Pèrdua del Ducat d'Atenes.", es:"Pérdida del Ducado de Atenas."},
@@ -3494,7 +3517,7 @@ let currentYear = 1137;
 let activeEntities = new Set(Object.keys(ENTITATS));
 
 const STR = {
-  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.46",
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.48",
       visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)", personalToggle:"Mostra possessions personals del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Sortir", support:"Suport",
       supportTitle:"Sosté el projecte",
@@ -3512,8 +3535,8 @@ const STR = {
       fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
       guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
       legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
-      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.46): cal verificació i ampliació."},
-  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.46",
+      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.48): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.48",
       visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)", personalToggle:"Mostrar posesiones personales del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Salir", support:"Apoyo",
       supportTitle:"Apoya el proyecto",
@@ -3531,7 +3554,7 @@ const STR = {
       fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
       guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
       legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
-      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.46): requieren verificación y ampliación."}
+      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.48): requieren verificación y ampliación."}
 };
 
 function setLang(l){
