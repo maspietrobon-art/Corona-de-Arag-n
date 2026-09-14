@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.49)</title>
+<title>La Corona d'Aragó — Catàleg territorial interactiu (esborrany v0.51)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -185,7 +185,7 @@
   .divmark{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     font-size:15px; cursor:pointer;}
   /* possessions personals del monarca: romb (diamant) en lloc de cercle buit — llenguatge visual clar i net */
-  .personal-mark{width:20px; height:20px; transform:rotate(45deg); display:flex; align-items:center; justify-content:center;
+  .personal-mark{width:15px; height:15px; transform:rotate(45deg); display:flex; align-items:center; justify-content:center;
     cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.2); opacity:.72;}
   .personal-mark .inner-crown{transform:rotate(-45deg); font-size:9px; line-height:1;}
   @keyframes markPulse{ 0%{ transform:scale(0.3); opacity:0.3; } 60%{ transform:scale(1.35); opacity:1; } 100%{ transform:scale(1); opacity:1; } }
@@ -208,7 +208,7 @@
   <header>
     <div id="headerTitleBlock">
       <h1 id="titleTxt">La Corona d'Aragó</h1>
-      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.49</span>
+      <span class="sub" id="subTxt">Catàleg territorial i històric interactiu — esborrany v0.51</span>
     </div>
     <div id="langToggle">
       <button id="btnCA" class="active" onclick="setLang('ca')">CA</button>
@@ -310,7 +310,7 @@
 
 <script>
 /* =======================================================================
-   DADES — esborrany v0.49. Camps bilingües amb sufix _ca / _es.
+   DADES — esborrany v0.51. Camps bilingües amb sufix _ca / _es.
    ======================================================================= */
 const ENTITATS = {
   "Comtat de Barcelona": {color:"#8f1626", label_ca:"Comtat de Barcelona (pre-unió)", label_es:"Condado de Barcelona (pre-unión)", noFilter:1},
@@ -343,7 +343,7 @@ const ENTITATS = {
   "Regne Unit":         {color:"#4a7a3a", label_ca:"Regne Unit (cessions d'Utrecht)", label_es:"Reino Unido (cesiones de Utrecht)"},
   "Regne de França":    {color:"#7a5a9a", label_ca:"Regne de França (cessions)", label_es:"Reino de Francia (cesiones)"},
   "Corona de Castella (unió personal)": {color:"#2e5e8c", label_ca:"Corona de Castella (unió personal amb Aragó)", label_es:"Corona de Castilla (unión personal con Aragón)"},
-  "Corona de Portugal (unió personal)": {color:"#3f7a4a", label_ca:"Corona de Portugal (Unió Ibèrica, 1580-1640)", label_es:"Corona de Portugal (Unión Ibérica, 1580-1640)"}
+  "Corona de Portugal (unió personal)": {color:"#4a7aa8", label_ca:"Corona de Portugal (Unió Ibèrica, 1580-1640)", label_es:"Corona de Portugal (Unión Ibérica, 1580-1640)"}
 };
 
 const TERRITORIS = [
@@ -2647,11 +2647,11 @@ const TERRITORIS = [
   note_ca:"Vila fronterera amb Portugal. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila fronterera amb Portugal. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
  {n_ca:"Fuente de Cantos", n_es:"Fuente de Cantos", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1720, lat:38.2467, lon:-6.3081,
   note_ca:"Vila extremenya. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila extremenya. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
- {n_ca:"Pamplona (reforç, comarca)", n_es:"Pamplona (refuerzo, comarca)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1720, lat:42.8125, lon:-1.6458,
+ {n_ca:"Pamplona (reforç, comarca)", n_es:"Pamplona (refuerzo, comarca)", ent:"Corona de Castella (unió personal)", personal:1, ys:1512, ye:1720, lat:42.8125, lon:-1.6458,
   note_ca:"Capital navarresa. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Capital navarresa. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
- {n_ca:"Estella (reforç)", n_es:"Estella (refuerzo)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1720, lat:42.6714, lon:-2.0328,
+ {n_ca:"Estella (reforç)", n_es:"Estella (refuerzo)", ent:"Corona de Castella (unió personal)", personal:1, ys:1512, ye:1720, lat:42.6714, lon:-2.0328,
   note_ca:"Vila del Camí de Sant Jaume navarrès. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Vila del Camí de Sant Jaume navarrès. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
- {n_ca:"Tudela (reforç castellà)", n_es:"Tudela (refuerzo castellano)", ent:"Corona de Castella (unió personal)", personal:1, ys:1479, ye:1720, lat:42.0662, lon:-1.6087,
+ {n_ca:"Tudela (reforç castellà)", n_es:"Tudela (refuerzo castellano)", ent:"Corona de Castella (unió personal)", personal:1, ys:1512, ye:1720, lat:42.0662, lon:-1.6087,
   note_ca:"Ribera navarresa. Sota els mateixos monarques que Aragó des del 1479, pero mai incorporada a la Corona d'Aragó.", note_es:"Ribera navarresa. Bajo los mismos monarcas que Aragón desde 1479, pero nunca incorporada a la Corona de Aragón."},
  {n_ca:"Portalegre", n_es:"Portalegre", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:39.2967, lon:-7.4281,
   note_ca:"Capital de l'Alt Alentejo. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640).", note_es:"Capital de l'Alt Alentejo. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640)."},
@@ -3067,6 +3067,30 @@ const TERRITORIS = [
   note_ca:"Vila interior de l'Algarve. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640).", note_es:"Vila interior de l'Algarve. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640)."},
  {n_ca:"Sagres", n_es:"Sagres", ent:"Corona de Portugal (unió personal)", personal:1, ys:1580, ye:1640, lat:37.0064, lon:-8.9375,
   note_ca:"Extrem sud-occidental de Portugal, escola de navegació d'Enric el Navegant. Sota els mateixos monarques que Aragó i Castella durant la Unio Iberica (1580-1640).", note_es:"Extrem sud-occidental de Portugal, escola de navegació d'Enric el Navegant. Bajo los mismos monarcas que Aragón y Castilla durante la Unión Ibérica (1580-1640)."},
+,
+ /* --- Protectorat de Pere I sobre Tolosa i vassalls (font: mapa aportat per l'usuari) --- */
+ {n_ca:"Comtat de Tolosa (protectorat de Pere I)", n_es:"Condado de Tolosa (protectorado de Pedro I)", ent:"Regne d'Aragó", personal:1, ys:1198, ye:1213, lat:43.6047, lon:1.4442,
+  note_ca:"Pere I intervé militarment per protegir Ramon VI de Tolosa (el seu cunyat) de la croada albigesa; l'aliança acaba amb la mort de Pere I a Muret.", note_es:"Pedro I interviene militarmente para proteger a Ramón VI de Tolosa (su cuñado) de la cruzada albigense; la alianza termina con la muerte de Pedro I en Muret."},
+ {n_ca:"Comtat d'Agen (protectorat)", n_es:"Condado de Agen (protectorado)", ent:"Regne d'Aragó", personal:1, ys:1198, ye:1213, lat:44.2036, lon:0.6167,
+  note_ca:"Agenès sota el mateix protectorat de Pere I sobre el comtat de Tolosa.", note_es:"Agenais bajo el mismo protectorado de Pedro I sobre el condado de Tolosa."},
+ {n_ca:"Comtat de Caors (protectorat)", n_es:"Condado de Cahors (protectorado)", ent:"Regne d'Aragó", personal:1, ys:1198, ye:1213, lat:44.4478, lon:1.4406,
+  note_ca:"Quercy sota el mateix protectorat de Pere I sobre el comtat de Tolosa.", note_es:"Quercy bajo el mismo protectorado de Pedro I sobre el condado de Tolosa."},
+ {n_ca:"Comtat de Rodés (protectorat)", n_es:"Condado de Rodez (protectorado)", ent:"Regne d'Aragó", personal:1, ys:1198, ye:1213, lat:44.3497, lon:2.5731,
+  note_ca:"Roergue sota el mateix protectorat de Pere I sobre el comtat de Tolosa.", note_es:"Rouergue bajo el mismo protectorado de Pedro I sobre el condado de Tolosa."},
+ {n_ca:"Vescomtat de Bearn (vassall)", n_es:"Vizcondado de Bearn (vasallo)", ent:"Comtat de Barcelona", personal:1, ys:1179, ye:1213, lat:43.2947, lon:-0.4581,
+  note_ca:"Vescomtat gascó dins la xarxa de vassallatges occitans catalanoaragonesos.", note_es:"Vizcondado gascón dentro de la red de vasallajes occitanos catalanoaragoneses."},
+ {n_ca:"Comtat de Provença (aliança amb Pere I)", n_es:"Condado de Provenza (alianza con Pedro I)", ent:"Regne d'Aragó", personal:1, ys:1196, ye:1213, lat:43.9493, lon:4.8055,
+  note_ca:"Governat per la branca cadet catalana (cosins de Pere I); apareix com a vassall/aliat de la Corona en mapes de l'època, tot i no ser domini personal directe del rei d'Aragó.", note_es:"Gobernado por la rama cadete catalana (primos de Pedro I); aparece como vasallo/aliado de la Corona en mapas de la época, aunque no es dominio personal directo del rey de Aragón."},
+,
+ /* --- Segona unio personal Arago-Navarra (1425-1479, Joan II), font: History Files --- */
+ {n_ca:"Pamplona (segona unió amb Aragó)", n_es:"Pamplona (segunda unión con Aragón)", ent:"Regne d'Aragó", personal:1, ys:1425, ye:1479, lat:42.8125, lon:-1.6458,
+  note_ca:"Capital navarresa sota Joan II, que fou alhora rei de Navarra (1425-1479) i d'Aragó (1458-1479). Mai formalment part de la Corona d'Aragó.", note_es:"Capital navarresa sota Joan II, que fou alhora rei de Navarra (1425-1479) i d'Aragó (1458-1479). Nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Estella (segona unió amb Aragó)", n_es:"Estella (segunda unión con Aragón)", ent:"Regne d'Aragó", personal:1, ys:1425, ye:1479, lat:42.6714, lon:-2.0328,
+  note_ca:"Sota el mateix rei que Aragó durant el regnat de Joan II. Mai formalment part de la Corona d'Aragó.", note_es:"Sota el mateix rei que Aragó durant el regnat de Joan II. Nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Tudela (segona unió amb Aragó)", n_es:"Tudela (segunda unión con Aragón)", ent:"Regne d'Aragó", personal:1, ys:1425, ye:1479, lat:42.0662, lon:-1.6087,
+  note_ca:"Sota el mateix rei que Aragó durant el regnat de Joan II. Mai formalment part de la Corona d'Aragó.", note_es:"Sota el mateix rei que Aragó durant el regnat de Joan II. Nunca formalmente parte de la Corona de Aragón."},
+ {n_ca:"Sangüesa (segona unió amb Aragó)", n_es:"Sangüesa (segunda unión con Aragón)", ent:"Regne d'Aragó", personal:1, ys:1425, ye:1479, lat:42.5744, lon:-1.2822,
+  note_ca:"Sota el mateix rei que Aragó durant el regnat de Joan II. Mai formalment part de la Corona d'Aragó.", note_es:"Sota el mateix rei que Aragó durant el regnat de Joan II. Nunca formalmente parte de la Corona de Aragón."},
 ];
 
 const BATALLES = [
@@ -3342,6 +3366,20 @@ const BATALLES = [
   res_ca:"La Companyia Catalana, al servei de l'emperador bizantí Andrònic II, derrota els turcs a Anatòlia; l'aliança amb Bizanci es trencarà l'any següent amb l'assassinat de Roger de Flor.", res_es:"La Compañía Catalana, al servicio del emperador bizantino Andrónico II, derrota a los turcos en Anatolia; la alianza con Bizancio se romperá al año siguiente con el asesinato de Roger de Flor."},
  {n_ca:"Captiveri de la família reial mallorquina a Bellver", n_es:"Cautiverio de la familia real mallorquina en Bellver", ys:1349, lat:39.562, lon:2.6289, kind:"revolt", out:"won",
   res_ca:"Després de Llucmajor, els fills i la vídua de Jaume III (Jaume IV, Isabel i la reina Violant) són capturats i reclosos al castell de Bellver; els seus intents posteriors de restaurar el regne fracassen.", res_es:"Tras Llucmajor, los hijos y la viuda de Jaime III (Jaime IV, Isabel y la reina Violante) son capturados y recluidos en el castillo de Bellver; sus intentos posteriores de restaurar el reino fracasan."},
+,
+ /* --- History Files: episodis addicionals del segle XIV-XV --- */
+ {n_ca:"Batalla del Río Salado (Tarifa)", n_es:"Batalla del Río Salado (Tarifa)", ys:1340, lat:36.0128, lon:-5.6072, kind:"battle", out:"won",
+  res_ca:"Flota conjunta d'Aragó, Castella i Portugal talla les comunicacions merínides a l'estret; els cristians derroten decisivament el soldà Abu al-Hàssan, que mai més amenaçarà Ibèria.", res_es:"Flota conjunta de Aragón, Castilla y Portugal corta las comunicaciones meriníes en el estrecho; los cristianos derrotan decisivamente al sultán Abu al-Hasan, que nunca más amenazará Iberia."},
+ {n_ca:"Invasió de Matthew de Foix a Catalunya", n_es:"Invasión de Matthew de Foix en Cataluña", ys:1396, lat:41.6488, lon:-0.8891, kind:"revolt", out:"lost",
+  res_ca:"El comte de Foix, coprincep d'Andorra, envaeix Catalunya reclamant el tron a la mort de Joan I; abandona en veure la reclamació més forta de Martí l'Humà.", res_es:"El conde de Foix, copríncipe de Andorra, invade Cataluña reclamando el trono a la muerte de Juan I; abandona al ver la reclamación más fuerte de Martín el Humano."},
+ {n_ca:"Conquesta de Còrsega per Arrigo della Rocca", n_es:"Conquista de Córcega por Arrigo della Rocca", ys:1372, lat:42.0396, lon:9.0129, kind:"siege", dir:"imposed", out:"won",
+  res_ca:"Pere IV envia una força que conquereix Còrsega sota les ordres d'Arrigo della Rocca, aprofitant la resistència local contra Génova; el control resulta efímer.", res_es:"Pedro IV envía una fuerza que conquista Córcega bajo las órdenes de Arrigo della Rocca, aprovechando la resistencia local contra Génova; el control resulta efímero."},
+ {n_ca:"Campanya personal d'Alfons el Magnànim a Còrsega", n_es:"Campaña personal de Alfonso el Magnánimo en Córcega", ys:1420, lat:42.5667, lon:8.75, kind:"siege", dir:"imposed", out:"uncertain",
+  res_ca:"Alfons V arriba personalment a Còrsega; Calvi cau davant les seves tropes, però Bonifacio resisteix i acaba pactant seguir com a ciutat-estat genovesa independent.", res_es:"Alfonso V llega personalmente a Córcega; Calvi cae ante sus tropas, pero Bonifacio resiste y acaba pactando seguir como ciudad-estado genovesa independiente."},
+ {n_ca:"Tractat d'Alcáçovas", n_es:"Tratado de Alcáçovas", ys:1479, lat:38.39, lon:-8.15, kind:"dedication", out:"won",
+  res_ca:"Posa fi a la Guerra de Successió Castellana amb Portugal; reconeix Isabel com a reina de Castella i divideix l'Atlàntic en zones d'influència entre Castella i Portugal.", res_es:"Pone fin a la Guerra de Sucesión Castellana con Portugal; reconoce a Isabel como reina de Castilla y divide el Atlántico en zonas de influencia entre Castilla y Portugal."},
+ {n_ca:"Tractat de Tordesillas", n_es:"Tratado de Tordesillas", ys:1494, lat:41.5017, lon:-5.0006, kind:"dedication", out:"won",
+  res_ca:"Divideix el món recentment descobert entre Castella i Portugal al llarg d'un meridià; ignorat per la resta de potències europees.", res_es:"Divide el mundo recién descubierto entre Castilla y Portugal a lo largo de un meridiano; ignorado por el resto de potencias europeas."},
 ];
 
 const MONARQUES = [
@@ -3504,8 +3542,10 @@ const CRONOLOGIA = [
  {ys:1418, ca:"Pèrdua de l'illa d'Egina.", es:"Pérdida de la isla de Egina."},
  {ys:1260, ca:"Fundació del Consolat de Mar a Barcelona.", es:"Fundación del Consulado del Mar en Barcelona."},
  {ys:1283, ca:"Pere el Gran estructura les Corts Catalanes.", es:"Pedro el Grande estructura las Cortes Catalanas."},
+ {ys:1340, ca:"Batalla del Río Salado: victòria conjunta cristiana que atura definitivament la invasió merínida.", es:"Batalla del Río Salado: victoria conjunta cristiana que detiene definitivamente la invasión merínida."},
  {ys:1348, ca:"La Pesta Negra arriba a Catalunya; mor gairebé la meitat de la població.", es:"La Peste Negra llega a Cataluña; muere casi la mitad de la población."},
  {ys:1391, ca:"Pogrom antijueu a València, Catalunya i Mallorca; centenars de morts.", es:"Pogromo antijudío en Valencia, Cataluña y Mallorca; centenares de muertos."},
+ {ys:1396, ca:"Matthew de Foix envaeix Catalunya reclamant el tron; abandona davant Martí l'Humà.", es:"Matthew de Foix invade Cataluña reclamando el trono; abandona ante Martín el Humano."},
  {ys:1398, ca:"Croades de represàlia contra el Nord d'Àfrica per atacs pirates.", es:"Cruzadas de represalia contra el Norte de África por ataques piratas."},
  {ys:1401, ca:"Creació de la Taula de Canvi de Barcelona, banc públic pioner.", es:"Creación de la Taula de Canvi de Barcelona, banco público pionero."},
  {ys:1368, ca:"Ofensiva de Marià IV d'Arborea redueix la Corona a Càller i l'Alguer.", es:"Ofensiva de Mariano IV de Arborea reduce la Corona a Cagliari y Alguer."},
@@ -3523,7 +3563,11 @@ const CRONOLOGIA = [
  {ys:1472, ca:"Pau de Pedralbes: Joan II recupera el tron català.", es:"Paz de Pedralbes: Juan II recupera el trono catalán."},
  {ys:1463, ca:"Sentència Arbitral de Baiona.", es:"Sentencia Arbitral de Bayona."},
  {ys:1445, ca:"Primera batalla d'Olmedo: derrota dels infants d'Aragó a Castella.", es:"Primera batalla de Olmedo: derrota de los infantes de Aragón en Castilla."},
+ {ys:1425, ca:"Joan II esdevé rei de Navarra; segona unió personal amb Aragó.", es:"Juan II se convierte en rey de Navarra; segunda unión personal con Aragón."},
  {ys:1476, ca:"Batalla de Toro: Ferran consolida la seva posició a Castella.", es:"Batalla de Toro: Fernando consolida su posición en Castilla."},
+ {ys:1479, ca:"Tractat d'Alcáçovas amb Portugal, dividint zones d'influència atlàntiques.", es:"Tratado de Alcáçovas con Portugal, dividiendo zonas de influencia atlánticas."},
+ {ys:1494, ca:"Tractat de Tordesillas: repartiment del món entre Castella i Portugal.", es:"Tratado de Tordesillas: reparto del mundo entre Castilla y Portugal."},
+ {ys:1505, ca:"Ferran es casa amb Germana de Foix, portant nominalment Andorra sota influència espanyola.", es:"Fernando se casa con Germana de Foix, trayendo nominalmente a Andorra bajo influencia española."},
  {ys:1512, ca:"Conquesta de Navarra per Ferran el Catòlic; incorporada a Castella, no a Aragó.", es:"Conquista de Navarra por Fernando el Católico; incorporada a Castilla, no a Aragón."},
  {ys:1487, ca:"Barcelona finança amb pólvora i diners el setge de Màlaga, tot i no obtenir-ne cap guany territorial.", es:"Barcelona financia con pólvora y dinero el sitio de Málaga, sin obtener ninguna ganancia territorial."},
  {ys:1493, ca:"Ferran el Catòlic recupera Rosselló i Cerdanya (Tractat de Barcelona).", es:"Fernando el Católico recupera Rosellón y Cerdaña (Tratado de Barcelona)."},
@@ -3552,7 +3596,7 @@ let currentYear = 1137;
 let activeEntities = new Set(Object.keys(ENTITATS));
 
 const STR = {
-  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.49",
+  ca:{title:"La Corona d'Aragó", sub:"Catàleg territorial i històric interactiu — esborrany v0.51",
       visual:"Visualització", allTime:"Mostra totes les èpoques", allTimeSub:"(ignora l'any)", personalToggle:"Mostra possessions personals del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Sortir", support:"Suport",
       supportTitle:"Sosté el projecte",
@@ -3570,8 +3614,8 @@ const STR = {
       fasce:"Cronologies sincronitzades", chron:"Cronologia general", monarquesChk:"Seqüència de monarques",
       guerresChk:"Guerres i campanyes", personatgesChk:"Grans personatges", batallesChk:"Batalles i setges (llista)",
       legendBtn:"Llegenda", legendEntitats:"Entitats sobiranes", legendBatalles:"Batalles / esdeveniments",
-      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.49): cal verificació i ampliació."},
-  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.49",
+      disclaimer:"Projecte de recerca personal i no oficial, de caràcter històric, social i geogràfic. No té cap finalitat política ni pretén prendre partit en debats identitaris o territorials contemporanis. Dades en fase d'elaboració (esborrany v0.51): cal verificació i ampliació."},
+  es:{title:"La Corona de Aragón", sub:"Catálogo territorial e histórico interactivo — borrador v0.51",
       visual:"Visualización", allTime:"Mostrar todas las épocas", allTimeSub:"(ignora el año)", personalToggle:"Mostrar posesiones personales del monarca",
       fullscreen:"Pantalla completa", exitFullscreen:"Salir", support:"Apoyo",
       supportTitle:"Apoya el proyecto",
@@ -3589,7 +3633,7 @@ const STR = {
       fasce:"Cronologías sincronizadas", chron:"Cronología general", monarquesChk:"Secuencia de monarcas",
       guerresChk:"Guerras y campañas", personatgesChk:"Grandes personajes", batallesChk:"Batallas y sitios (lista)",
       legendBtn:"Leyenda", legendEntitats:"Entidades soberanas", legendBatalles:"Batallas / eventos",
-      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.49): requieren verificación y ampliación."}
+      disclaimer:"Proyecto de investigación personal y no oficial, de carácter histórico, social y geográfico. No tiene ninguna finalidad política ni pretende tomar partido en debates identitarios o territoriales contemporáneos. Datos en fase de elaboración (borrador v0.51): requieren verificación y ampliación."}
 };
 
 function setLang(l){
@@ -3780,7 +3824,7 @@ function updateMap(){
     if(isPersonal){
       // possessió personal del monarca, NO territori formal de la Corona d'Aragó:
       // romb (diamant) semitransparent en el color de l'entitat — llenguatge visual net i diferenciat del cercle ple.
-      const icon = L.divIcon({className:'', html:`<div class="personal-mark" style="background:${ent.color}2e; border:2px solid ${ent.color}bb;"></div>`, iconSize:[20,20], iconAnchor:[10,10]});
+      const icon = L.divIcon({className:'', html:`<div class="personal-mark" style="background:${ent.color}2e; border:2px solid ${ent.color}bb;"></div>`, iconSize:[15,15], iconAnchor:[8,8]});
       marker = L.marker([t.lat, t.lon], {icon});
     } else {
       const markerOpts = {radius: isNominal ? 7 : 9, color:'#2a1c14', weight:1.5, fillColor:ent.color,
